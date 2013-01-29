@@ -9,3 +9,4 @@ import time
 
 def hello ( request ) :
     return HttpResponse ( "Hello world! Привет питон!")
+ 
