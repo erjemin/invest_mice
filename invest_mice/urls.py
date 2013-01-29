@@ -1,10 +1,16 @@
+# -*- coding: utf-8 -*-
+# Включили поддержку UTF-8 в Python. Без этого даже комментарии на русском языке нельзя писать.
+# from django.conf.urls import *
 from django.conf.urls import patterns, include, url
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
 
+from www.views import hello
+
 urlpatterns = patterns('',
+    ( r'^hello/$', hello ),
     # Examples:
     # url(r'^$', 'invest_mice.views.home', name='home'),
     # url(r'^invest_mice/', include('invest_mice.foo.urls')),
@@ -15,3 +21,9 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
 )
+
+
+
+
+
+

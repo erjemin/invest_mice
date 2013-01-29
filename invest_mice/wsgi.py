@@ -1,6 +1,5 @@
 # -*- coding^ utf-8 -*-
 """
-конфигуратор WSGI для проекта invest_mice
 
 This module contains the WSGI application used by Django's development server
 and any production WSGI deployments. It should expose a module-level variable
