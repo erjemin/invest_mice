@@ -210,7 +210,7 @@ echo 'время:       ' . date('H:i:s', $dtCurentDataTime) . '<br />';
 
 // Соединяемся с БД
 try {
-  $db = new PDO ('mysql:host=db.cube2.ru;dbname=db_invest_index', 'erjemin' , 'qwaser' );
+  $db = new PDO ('mysql:host=зачем.вам.знать;dbname=db_invest_index', 'тайна' , 'не скажу' );
   $qIndexValueList = $db->query(
 	'SELECT UNIX_TIMESTAMP( tbIndexValue.tmDATE ) as tmDATE2,
 			tbIndexValue.szTICKER,
