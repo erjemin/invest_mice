@@ -8,11 +8,11 @@ from django.contrib import admin
 admin.autodiscover()
 
 from www.views import hello
-from www.views import pars
+from www.parser import parsRBC
 
 urlpatterns = patterns('',
     ( r'^hello/$', hello ),
-    ( r'^parser/$', pars ),
+    ( r'^parser(\S{0,6})/$', parsRBC ),
     # Examples:
     # url(r'^$', 'invest_mice.views.home', name='home'),
     # url(r'^invest_mice/', include('invest_mice.foo.urls')),
