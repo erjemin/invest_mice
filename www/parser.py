@@ -8,9 +8,18 @@
 #    не забываем привести ее в формат unicode: theunicodestring.encode("utf-8")
 
 from django.http import HttpResponse, Http404
-# import random
+# Для того чтобы работат с часовыми поясами надо ставить "import putz". Но он не взеде есть и не всегда
+# пожно его в Python установить. Решается через "from django.utils import timezone" и см. ниже
+from django.utils import timezone
+
 import datetime
-import time
+import pytz                                     # библиотеа не доступна, ??? Походе ее django забивает
+import MySQLdb                                  # библиотеа не доступна, ??? Походе ее django забивает
+
+
+# import tzinfo
+# import timedelta
+# import random
 
 
 def parsRBC ( request, szCheckTIKER = "ALL" ) :
@@ -20,14 +29,18 @@ def parsRBC ( request, szCheckTIKER = "ALL" ) :
         szCheckTIKER = "ALL"
 
     szHtml = ""
+    # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
+    # то получим текущее время без меток часового пояся, так что делаем так:
+    szHtml += datetime.datetime.now(timezone.get_default_timezone()).strftime('%d/%m/%Y %H:%M:%S %z (%Z)') + "<br />"
 
-    try:
-        fileLog = open( "./logs/parser-process.log" , 'a' )
-    except IOError:
-        szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
-    else:
-        fileLog.write('HELLO LOG -\n')
-        fileLog.close()
+
+#    try:
+#        fileLog = open( "./logs/parser-process.log" , 'a' )
+#    except IOError:
+#        szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
+#    else:
+#        fileLog.write('HELLO LOG -\n')
+#        fileLog.close()
 
 
     # try:
