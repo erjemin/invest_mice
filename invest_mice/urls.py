@@ -12,7 +12,7 @@ from www.parser import parsRBC
 
 urlpatterns = patterns('',
     ( r'^hello/$', hello ),
-    ( r'^parser(\S{0,6})_(\S{0,3})/$', parsRBC ),
+    ( r'^parser(\S{0,6})_(\S{0,3})/$', parsRBC ), # передаем два параметра (если получится)
     # Examples:
     # url(r'^$', 'invest_mice.views.home', name='home'),
     # url(r'^invest_mice/', include('invest_mice.foo.urls')),

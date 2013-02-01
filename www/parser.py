@@ -100,26 +100,6 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         return HttpResponse ( szHtml )
 
 
-    #
-#      cursor = connection.cursor()
-#
-# Query
-#sql = "Select title, rating, year FROM tbl_movies WHERE rating>=3"
-#
-# Run query and get result
-#try:
-#    cursor.execute(sql)
-#    result = cursor.fetchall()
-#except Exception, e:
-#    print e
-#
-# Loop through result
-#for row in result:
-#    print row['title'] + “,\t” + row['rating'] + “stars”
-
-
-
-
     # try:
     #    iNum = int ( iNum )
     # except ValueError:
