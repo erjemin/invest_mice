@@ -23,6 +23,8 @@ import MySQLdb                                  # библиотеа не дос
 
 
 def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
+    # szCheckTIKER -- тикер который надо распарсить
+    # szAddCommand -- дополнительная комманда. Реагируем только на "NEW" (распарсить новый тиккер)
     # если вызов проиходит через DJANGO то при отсутствии параметро szCheckTIKER содержит
     # пустую строку. Если это так то заменим ее на "ALL"
     if szCheckTIKER == "" :
@@ -38,9 +40,12 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
     else:
         # --- фаза 1: начинаем LOG
+        # формат log-файлов
+        # ДЕЙСТВИЕ - РЕЗУЛЬТАТ - [ДАТА в формате 29/Jan/2013:18:29:56 +0400]
+        # ---
         # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
         # то получим текущее время без меток часового пояся, так что делаем так:
-        szLogEntry = u"LOG SESSION BEGIN - "\
+        szLogEntry = u"LOG SESSION BEGIN          - OK! - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
         fileLog.write( szLogEntry )
@@ -50,7 +55,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         try:
             dbconnect = MySQLdb.connect(user='root',passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
             # --- Коннект к БД есть. Пишем это событие в лог
-            szLogEntry = u"DB CONNECT OPEN   - "\
+            szLogEntry = u"DB CONNECT OPEN            - OK! - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
             fileLog.write( szLogEntry )
@@ -61,34 +66,35 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             dbcursor.execute( u"""SELECT tbIndexName.szTICKER
                            FROM tbIndexName
                            WHERE tbIndexName.szTICKER = \"%s\"""" % szCheckTIKER )
-            szTMP = dbcursor.fetchone()
-            # проверяем есть ли выдача в запросе
-            if dbcursor.rowcount != 0 :
-                szHtml += "%s\n" % szTMP
-                szLogEntry = u"PARS   #%11s - " % szTMP
+#            szTMP = dbcursor.fetchone()
+            # проверяем есть ли выдача в запросе или может это запрос на PARS нового тиккера
+            if dbcursor.rowcount != 0 or szAddCommand == "NEW" :
+                # --- надо парсить
+                szLogEntry = u"PARS [%d] #%16s - OK! - " % (dbcursor.rowcount, szCheckTIKER)
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
             else:
-                szHtml += "%s\n" % szTMP
-                szLogEntry = u"UNKNOW #%11s - " % szCheckTIKER
+                # --- неизввестный тикер и ничего нового парсить не надо
+                szLogEntry = u"UNKNOW   #%16s - ERR - " % szCheckTIKER
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
+                # --- досвиданья
 
-
+#           szHtml += "%s\n" % szTMP
             # --- закрываем курсор
             dbcursor.close()
             # --- закрываем коннект с базой
             dbconnect.close( )
-            szLogEntry = u"DB CONNECT CLOSE  - "\
+            szLogEntry = u"DB CONNECT CLOSE           - OK! - "\
                          + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                          + "\n"
             fileLog.write( szLogEntry )
             szHtml += szLogEntry
         except Exception, szErrorCode:
             # --- нет коннекта к БД. Фаза 2 стала последней!
-            szLogEntry = "DB ERROR (%s) - " % szErrorCode
+            szLogEntry = u"DB ERROR (%s) - ERR - " % szErrorCode
             szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
             fileLog.write( szLogEntry )
             szHtml += szLogEntry
@@ -105,8 +111,31 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
     # except ValueError:
     #    raise Http404 ( )
 
-    # формат log-файлов
-    # ДЕЙСТВИЕ - РЕЗУЛЬТАТ - [ДАТА][29/Jan/2013:18:29:56 +0400]
 
-
+# строчка для вызова эерана с котировками c RBC:
+# http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=NASD&d1=20&m1=12&y1=2012&d2=25&m2=01&y2=2013&lastdays=09&separator=%3B&data_format=BROWSER&header=1
+# http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=DJI&d1=20&m1=12&y1=1901&separator=%3B&data_format=BROWSER&header=1
+# Общий формат:
+# Вызов http://export.rbc.ru/free/index.0/free.fcgi?
+# - period=DAILY -- перод. бесплатно доступны только дневные
+# - tickers=NASD -- тикет (проверить, кажется доступны несколько тикетов или группы)
+# - d1=20 -- дата1, день,  (два символа, лидирующий ноль, не обязательно)
+# - m1=12 -- дата1, месяц (два символа, лидирующий ноль,  не обязательно)
+# - y1=2012 -- дата1, год (четыре символа,  не обязательно)
+# - d2=25 -- дата2, стартуем с дня,  (два символа, лидирующий ноль, не обязательно)
+# - m2=01 -- дата2, стартуем с месяца (два символа, лидирующий ноль,  не обязательно)
+# - y2=2013 -- дата2, год (четыре символа,  не обязательно)
+# - lastdays=09 -- покзать на это колличесто дней. Ели нет дата1 или дата2 то показывает lastdays последних дней из базы
+# - separator=%3B -- сепаратор (в данном сслучае ";"
+# - data_format=BROWSER -- выводить в броузер (можно в файл, но его сложнее парсить).
+# - header=1 -- выводить заголовок (1) или нет (0)... TICKER;DATE;OPEN;HIGH;LOW;CLOSE;VOL;WAPRICE
+# порядок выдачи:
+# - TICKER -- тикер
+# - DATE -- дата в формате YYYY-MM-DD
+# - OPEN -- цена (уровень) открытия
+# - HIGH -- цена (уровень) максимум дня
+# - LOW -- цена (уровень) минимум дня
+# - CLOSE --цена (уровень) закрытия
+# - VOL -- объём (для индексов не доступен)
+# - WAPRICE -- ???? фигня какая-то
 
