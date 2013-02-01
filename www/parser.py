@@ -22,33 +22,108 @@ import MySQLdb                                  # библиотеа не дос
 # import random
 
 
-def parsRBC ( request, szCheckTIKER = "ALL" ) :
+def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
     # если вызов проиходит через DJANGO то при отсутствии параметро szCheckTIKER содержит
     # пустую строку. Если это так то заменим ее на "ALL"
     if szCheckTIKER == "" :
         szCheckTIKER = "ALL"
+    szPathToLogFile = "./logs/parser-process.log"      # путь для лог-файла (если в пути есть директории убедитесь что ои
+                                                       # созданы заранее
+    szDataForamtForLog = "%d/%m/%Y %H:%M:%S.%f %z (%Z)"   # формат даты-времени спользуемый в ЛОГ-файле
+    szHtml = "<pre>"   # для отладки. Сюда сваливаем всю выдачу... В конце ее покажем в вебе
 
-    szHtml = ""
-    # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
-    # то получим текущее время без меток часового пояся, так что делаем так:
-    szHtml += datetime.datetime.now(timezone.get_default_timezone()).strftime('%d/%m/%Y %H:%M:%S %z (%Z)') + "<br />"
+    try:
+        fileLog = open( szPathToLogFile , 'a' )        # открываем log-файл на добавление
+    except IOError:
+        szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
+    else:
+        # --- фаза 1: начинаем LOG
+        # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
+        # то получим текущее время без меток часового пояся, так что делаем так:
+        szLogEntry = u"LOG SESSION BEGIN - "\
+                     + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
+                     + "\n"
+        fileLog.write( szLogEntry )
+        szHtml += szLogEntry
+
+        # --- фаза 2: коннектимся к БД
+        try:
+            dbconnect = MySQLdb.connect(user='root',passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
+            # --- Коннект к БД есть. Пишем это событие в лог
+            szLogEntry = u"DB CONNECT OPEN   - "\
+                     + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
+                     + "\n"
+            fileLog.write( szLogEntry )
+            szHtml += szLogEntry
+            # --- создаем курсор БД ?? что-это
+            dbcursor=dbconnect.cursor()
+            # --- проверяем наличие тикеров
+            dbcursor.execute( u"""SELECT tbIndexName.szTICKER
+                           FROM tbIndexName
+                           WHERE tbIndexName.szTICKER = \"%s\"""" % szCheckTIKER )
+            szTMP = dbcursor.fetchone()
+            # проверяем есть ли выдача в запросе
+            if dbcursor.rowcount != 0 :
+                szHtml += "%s\n" % szTMP
+                szLogEntry = u"PARS   #%11s - " % szTMP
+                szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+                fileLog.write( szLogEntry )
+                szHtml += szLogEntry
+            else:
+                szHtml += "%s\n" % szTMP
+                szLogEntry = u"UNKNOW #%11s - " % szCheckTIKER
+                szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+                fileLog.write( szLogEntry )
+                szHtml += szLogEntry
 
 
-#    try:
-#        fileLog = open( "./logs/parser-process.log" , 'a' )
-#    except IOError:
-#        szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
-#    else:
-#        fileLog.write('HELLO LOG -\n')
-#        fileLog.close()
+            # --- закрываем курсор
+            dbcursor.close()
+            # --- закрываем коннект с базой
+            dbconnect.close( )
+            szLogEntry = u"DB CONNECT CLOSE  - "\
+                         + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
+                         + "\n"
+            fileLog.write( szLogEntry )
+            szHtml += szLogEntry
+        except Exception, szErrorCode:
+            # --- нет коннекта к БД. Фаза 2 стала последней!
+            szLogEntry = "DB ERROR (%s) - " % szErrorCode
+            szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+            fileLog.write( szLogEntry )
+            szHtml += szLogEntry
+
+        fileLog.close()
+    finally:
+        szHtml += "</pre>"
+        szHtml += u"Hello world! Привет питон! %s //// %s" % (szCheckTIKER, szAddCommand)
+        return HttpResponse ( szHtml )
+
+
+    #
+#      cursor = connection.cursor()
+#
+# Query
+#sql = "Select title, rating, year FROM tbl_movies WHERE rating>=3"
+#
+# Run query and get result
+#try:
+#    cursor.execute(sql)
+#    result = cursor.fetchall()
+#except Exception, e:
+#    print e
+#
+# Loop through result
+#for row in result:
+#    print row['title'] + “,\t” + row['rating'] + “stars”
+
+
 
 
     # try:
     #    iNum = int ( iNum )
     # except ValueError:
     #    raise Http404 ( )
-    szHtml += u"Hello world! Привет питон! %s" % szCheckTIKER
-    return HttpResponse ( szHtml )
 
     # формат log-файлов
     # ДЕЙСТВИЕ - РЕЗУЛЬТАТ - [ДАТА][29/Jan/2013:18:29:56 +0400]
