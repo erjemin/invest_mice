@@ -96,7 +96,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         fileLog.close()
     finally:
         szHtml += "</pre>"
-        szHtml += u"Hello world! Привет питон! %s //// %s" % (szCheckTIKER, szAddCommand)
+        szHtml += u"Hello world! Привет питон! <b>1=%s //// 2=%s</b>" % (szCheckTIKER, szAddCommand)
         return HttpResponse ( szHtml )
 
 
