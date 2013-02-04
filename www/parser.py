@@ -65,7 +65,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             # --- проверяем наличие тикеров
             dbcursor.execute( u"""SELECT tbIndexName.szTICKER
                            FROM tbIndexName
-                           WHERE tbIndexName.szTICKER = \"%s\"""" % szCheckTIKER )
+                           WHERE tbIndexName.szTICKER = \"%s\";""" % szCheckTIKER )
 #            szTMP = dbcursor.fetchone()
             # проверяем есть ли выдача в запросе или может это запрос на PARS нового тиккера
             if dbcursor.rowcount != 0 or szAddCommand == "NEW" :
@@ -74,6 +74,35 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
+                # предположим? что надо парсить новые данные.
+                # Подставляем дату создания самого первого индекса в мире DJI
+                szY1intoURL = "1928"
+                szM1intoURL = "10"
+                szD1intoURL = "1"
+
+                if szAddCommand != "NEW" :
+                    # если новые данные парсить ненадо, то проверим
+                    # дату самых свежих котировок по тикеру в Базе.
+                    dbcursor.execute( u"""
+                        SELECT MAX(tbIndexValue.tmDate) AS dtLastDate
+                        FROM tbIndexValue
+                        WHERE tbIndexValue.szTICKER = \"%s\"
+                        GROUP BY tbIndexValue.szTICKER;""" % szCheckTIKER )
+                    # Добавляем к полученной дате еще один день
+                    dtLastDateTicker = dbcursor.fetchone()[0] + datetime.timedelta(days=1)
+                    # Подставляем дату самых свежих данных из базы
+                    szY1intoURL = dtLastDateTicker.strftime( "%Y" )
+                    szM1intoURL = dtLastDateTicker.strftime( "%m" )
+                    szD1intoURL = dtLastDateTicker.strftime( "%d" )
+
+                # формируем URL для вызова соответствующей странице по тиккеру
+                szParsURL =  "http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY"
+                szParsURL += "&tickers=%s&d1=%s" % ( szCheckTIKER, szD1intoURL )
+                szParsURL += "&m1=%s&y1=%s" % (szM1intoURL, szY1intoURL)
+                szParsURL += "&separator=%3B&data_format=BROWSER&header=0"
+
+                szHtml += szParsURL + "\n"
+
             else:
                 # --- неизввестный тикер и ничего нового парсить не надо
                 szLogEntry = u"UNKNOW   #%16s - ERR - " % szCheckTIKER
@@ -114,7 +143,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
 
 # строчка для вызова эерана с котировками c RBC:
 # http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=NASD&d1=20&m1=12&y1=2012&d2=25&m2=01&y2=2013&lastdays=09&separator=%3B&data_format=BROWSER&header=1
-# http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=DJI&d1=20&m1=12&y1=1901&separator=%3B&data_format=BROWSER&header=1
+#
 # Общий формат:
 # Вызов http://export.rbc.ru/free/index.0/free.fcgi?
 # - period=DAILY -- перод. бесплатно доступны только дневные
