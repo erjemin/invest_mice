@@ -15,7 +15,8 @@ from django.utils import timezone
 import datetime
 import pytz                                     # библиотеа не доступна, ??? Походе ее django забивает
 import MySQLdb                                  # библиотеа не доступна, ??? Походе ее django забивает
-
+import httplib                                  # библиотека работы с HTTP (скачиваем ссылки и все такое)
+import urllib                                   # библиотека преобразования URL
 
 # import tzinfo
 # import timedelta
@@ -45,7 +46,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         # ---
         # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
         # то получим текущее время без меток часового пояся, так что делаем так:
-        szLogEntry = u"LOG SESSION BEGIN          - OK! - "\
+        szLogEntry = u"LOG SESSION BEGIN          - 200 - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
         fileLog.write( szLogEntry )
@@ -55,7 +56,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         try:
             dbconnect = MySQLdb.connect(user='root',passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
             # --- Коннект к БД есть. Пишем это событие в лог
-            szLogEntry = u"DB CONNECT OPEN            - OK! - "\
+            szLogEntry = u"DB CONNECT OPEN            - 200 - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
             fileLog.write( szLogEntry )
@@ -70,7 +71,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             # проверяем есть ли выдача в запросе или может это запрос на PARS нового тиккера
             if dbcursor.rowcount != 0 or szAddCommand == "NEW" :
                 # --- надо парсить
-                szLogEntry = u"PARS [%d] #%16s - OK! - " % (dbcursor.rowcount, szCheckTIKER)
+                szLogEntry = u"PARS [%d] #%16s - 200 - " % (dbcursor.rowcount, szCheckTIKER)
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
@@ -95,17 +96,50 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
                     szM1intoURL = dtLastDateTicker.strftime( "%m" )
                     szD1intoURL = dtLastDateTicker.strftime( "%d" )
 
-                # формируем URL для вызова соответствующей странице по тиккеру
-                szParsURL =  "http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY"
-                szParsURL += "&tickers=%s&d1=%s" % ( szCheckTIKER, szD1intoURL )
-                szParsURL += "&m1=%s&y1=%s" % (szM1intoURL, szY1intoURL)
-                szParsURL += "&separator=%3B&data_format=BROWSER&header=0"
+                # проверяем и организуем коннект к сайту РБК
+                webConnect = httplib.HTTPConnection("export.rbc.ru")
+                # делаем запрос к странице сервера
+                # формируем URL для вызова соответствующей странице по тиккеру |
+                #                                                              |
+                webConnect.request(                                        #   |
+                    "GET",                                                 #   |
+                    "/free/index.0/free.fcgi?" + urllib.urlencode( { "period": "DAILY",
+                                                                     "tickers": szCheckTIKER,
+                                                                     "d1": szD1intoURL,
+                                                                     "m1": szM1intoURL,
+                                                                     "y1": szY1intoURL,
+                                                                     "separator": ";",
+                                                                     "data_format": "BROWSER",
+                                                                     "header": "0" }) ,
+                    "",
+                    { "Content-type": "application/x-www-form-urlencoded",
+                      "Accept": "text/plain",
+                      "Accept-Charset": "utf-8",
+                      "User-Agent": "MadMouse/0.1" } )
+                webResponse = webConnect.getresponse( )
+                # пишем в лог статус сервера РБК
+                szLogEntry = u">>>SERVER: %15s - %3d - " % (webResponse.reason, webResponse.status)
+                szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+                fileLog.write( szLogEntry )
+                szHtml += szLogEntry
+                # считаем и пишем в лог объем полученных данных с сервера РБК
+                lszGettedData = webResponse.read().splitlines()
+                szLogEntry = u">>>GET STRING: %011d - 200 - " % len(lszGettedData)
+                szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+                fileLog.write( szLogEntry )
+                szHtml += szLogEntry
+                # цикл по строчкам...
+#                szHtml += "%s" % lszGettedData + "\n"
+                for i in lszGettedData :
+                    szHtml += u"LEN:%d - %s" % ( len(i), i.split(";")) + "\n"
 
-                szHtml += szParsURL + "\n"
+                # szHtml += "%s" % len(webResponse.read().splitlines()) + "\n"
+
+
 
             else:
                 # --- неизввестный тикер и ничего нового парсить не надо
-                szLogEntry = u"UNKNOW   #%16s - ERR - " % szCheckTIKER
+                szLogEntry = u"UNKNOW TK#%16s - 404 - " % szCheckTIKER
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
@@ -116,14 +150,14 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             dbcursor.close()
             # --- закрываем коннект с базой
             dbconnect.close( )
-            szLogEntry = u"DB CONNECT CLOSE           - OK! - "\
+            szLogEntry = u"DB CONNECT CLOSE           - 200 - "\
                          + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                          + "\n"
             fileLog.write( szLogEntry )
             szHtml += szLogEntry
         except Exception, szErrorCode:
             # --- нет коннекта к БД. Фаза 2 стала последней!
-            szLogEntry = u"DB ERROR (%s) - ERR - " % szErrorCode
+            szLogEntry = u"DB ERROR (%s) - 403 - " % szErrorCode
             szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
             fileLog.write( szLogEntry )
             szHtml += szLogEntry
@@ -131,7 +165,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         fileLog.close()
     finally:
         szHtml += "</pre>"
-        szHtml += u"Hello world! Привет питон! <b>1=%s //// 2=%s</b>" % (szCheckTIKER, szAddCommand)
+        szHtml += u"<b>ARG1=%s //// ARG2=%s</b>" % (szCheckTIKER, szAddCommand)
         return HttpResponse ( szHtml )
 
 
