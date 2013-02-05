@@ -46,7 +46,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         # ---
         # Устанавливаем текущее время с метками часового пояаса. Если сделать просто datetime.datetime.now()
         # то получим текущее время без меток часового пояся, так что делаем так:
-        szLogEntry = u"LOG SESSION BEGIN          - 200 - "\
+        szLogEntry = u"LOG SESSION BEGIN           - 200 - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
         fileLog.write( szLogEntry )
@@ -56,7 +56,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
         try:
             dbconnect = MySQLdb.connect(user='root',passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
             # --- Коннект к БД есть. Пишем это событие в лог
-            szLogEntry = u"DB CONNECT OPEN            - 200 - "\
+            szLogEntry = u"DB CONNECT OPEN             - 200 - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                      + "\n"
             fileLog.write( szLogEntry )
@@ -67,11 +67,23 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             dbcursor.execute( u"""SELECT tbIndexName.szTICKER
                            FROM tbIndexName
                            WHERE tbIndexName.szTICKER = \"%s\";""" % szCheckTIKER )
+
 #            szTMP = dbcursor.fetchone()
+
+            # --- тут будет кусок для случая DEL (удалить тикер)
+                # c вываливанием по return
+
+            # --- тут возможно будет кусок для случая UPD
+                # для этого вызываем сначала сами себя с агрументом DEL
+                # после вызываем сами себя с аргументом NEW
+
+            # --- а еще случай если NEW а данные старые есть... Происходит дублирование записей
+                # не страшно, но не хотелось бы...
+
             # проверяем есть ли выдача в запросе или может это запрос на PARS нового тиккера
             if dbcursor.rowcount != 0 or szAddCommand == "NEW" :
                 # --- надо парсить
-                szLogEntry = u"PARS [%d] #%16s - 200 - " % (dbcursor.rowcount, szCheckTIKER)
+                szLogEntry = u"PARSE [%d] #%16s - 200 - " % (dbcursor.rowcount, szCheckTIKER)
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
@@ -98,7 +110,23 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
 
                 # проверяем и организуем коннект к сайту РБК
                 webConnect = httplib.HTTPConnection("export.rbc.ru")
+                # общая структура URL для выдачи данныхс котировками c RBC:
+                # http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=NASD&d1=20&m1=12&y1=2012&d2=25&m2=01&y2=2013&lastdays=09&separator=%3B&data_format=BROWSER&header=1
+                #
+                # Вызов http://export.rbc.ru/free/index.0/free.fcgi?
+                # - period=DAILY -- перод. бесплатно доступны только дневные
+                # - tickers=NASD -- тикет (проверить, кажется доступны несколько тикетов или группы)
+                # - d1=20 -- дата1, день,  (два символа, лидирующий ноль, не обязательно)
+                # - m1=12 -- дата1, месяц (два символа, лидирующий ноль,  не обязательно)
+                # - y1=2012 -- дата1, год (четыре символа,  не обязательно)
+                # - d2=25 -- дата2, стартуем с дня,  (два символа, лидирующий ноль, не обязательно)
+                # - m2=01 -- дата2, стартуем с месяца (два символа, лидирующий ноль,  не обязательно)
+                # - y2=2013 -- дата2, год (четыре символа,  не обязательно)
+                # - lastdays=09 -- покзать на это колличесто дней. Ели нет дата1 или дата2 то показывает lastdays последних дней из базы
+                # - separator=%3B -- сепаратор (в данном сслучае ";"
+                # - data_format=BROWSER -- выводить в броузер (можно в файл, но его сложнее парсить).
                 # делаем запрос к странице сервера
+                #
                 # формируем URL для вызова соответствующей странице по тиккеру |
                 #                                                              |
                 webConnect.request(                                        #   |
@@ -116,22 +144,81 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
                       "Accept": "text/plain",
                       "Accept-Charset": "utf-8",
                       "User-Agent": "MadMouse/0.1" } )
+                # ---- ОТЛАДКА
+                szHtml += "/free/index.0/free.fcgi?" + urllib.urlencode( { "period": "DAILY",
+                                                                           "tickers": szCheckTIKER,
+                                                                           "d1": szD1intoURL,
+                                                                           "m1": szM1intoURL,
+                                                                           "y1": szY1intoURL,
+                                                                           "separator": ";",
+                                                                           "data_format": "BROWSER",
+                                                                           "header": "0" }) + "\n"
+                # ---- ОТЛАДКА
                 webResponse = webConnect.getresponse( )
                 # пишем в лог статус сервера РБК
-                szLogEntry = u">>>SERVER: %15s - %3d - " % (webResponse.reason, webResponse.status)
+                szLogEntry = u">>> SERVER: %15s - %3d - " % (webResponse.reason, webResponse.status)
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
                 # считаем и пишем в лог объем полученных данных с сервера РБК
                 lszGettedData = webResponse.read().splitlines()
-                szLogEntry = u">>>GET STRING: %011d - 200 - " % len(lszGettedData)
+                szLogEntry = u">>> GET STRING: %011d - 200 - " % len(lszGettedData)
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
                 # цикл по строчкам...
 #                szHtml += "%s" % lszGettedData + "\n"
-                for i in lszGettedData :
-                    szHtml += u"LEN:%d - %s" % ( len(i), i.split(";")) + "\n"
+                for szCurrentData in lszGettedData :
+                    # у данных в строке следующая структура и порядок
+                    # TICKER;DATE;OPEN;HIGH;LOW;CLOSE;VOL;WAPRICE
+                    # где:
+                    # - TICKER -- тикер
+                    # - DATE -- дата в формате YYYY-MM-DD
+                    # - OPEN -- цена (уровень) открытия
+                    # - HIGH -- цена (уровень) максимум дня
+                    # - LOW -- цена (уровень) минимум дня
+                    # - CLOSE --цена (уровень) закрытия
+                    # - VOL -- объём (для индексов не доступен)
+                    # - WAPRICE -- ???? фигня какая-то
+                    #
+                    # разбиваем строку текущих данных и запоминаем во временном листе
+                    lszCurrentData = szCurrentData.split(";")
+                    # приводим DATE из строкковой переменной в datetime.datetim
+                    # lszCurrentData[1] = datetime.datetime(
+                    #    int( lszCurrentData[1].split("-")[0] ),
+                    #    int( lszCurrentData[1].split("-")[1] ),
+                    #    int( lszCurrentData[1].split("-")[2] ),
+                    #    0, 0, 0)
+                    # приводим OPEN, HIGHT, LOW, CLOSE из строк в float
+                    lszCurrentData[2] = float( lszCurrentData[2] )
+                    lszCurrentData[3] = float( lszCurrentData[3] )
+                    lszCurrentData[4] = float( lszCurrentData[4] )
+                    lszCurrentData[5] = float( lszCurrentData[5] )
+                    # удаляем два ненужных элемента выдачи VOL и WAPRICE
+                    lszCurrentData.pop()
+                    lszCurrentData.pop()
+                    # данные распарщены и можно записать их в Базу Данных
+                    dbcursor.execute( """
+                                        INSERT INTO db_stocks.tbIndexValue
+                                        ( szTICKER , tmDATE , fOPEN  , fHIGH , fLOW , fCLOSE )
+                                        VALUES
+                                        ( \"%s\", \"%s\", %f, %f, %f, %f );
+                                        """ % (lszCurrentData[0],
+                                               lszCurrentData[1],
+                                               lszCurrentData[2],
+                                               lszCurrentData[3],
+                                               lszCurrentData[4],
+                                               lszCurrentData[5]) )
+                # исполняем все INSERT разом
+                dbconnect.commit()
+                # пишем в лог что все ок
+                szLogEntry = u">>> WRITE ROW2DB: %09d - 200 - " % len(lszGettedData)
+                szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
+                fileLog.write( szLogEntry )
+                szHtml += szLogEntry
+
+                # --- тут будет код про случай добавления нового тикера.
+                # Надо же еще и в таблицу tbIndexName положить инфу про новый тиккер
 
                 # szHtml += "%s" % len(webResponse.read().splitlines()) + "\n"
 
@@ -139,7 +226,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
 
             else:
                 # --- неизввестный тикер и ничего нового парсить не надо
-                szLogEntry = u"UNKNOW TK#%16s - 404 - " % szCheckTIKER
+                szLogEntry = u"UNKNOW TKR#%16s - 404 - " % szCheckTIKER
                 szLogEntry += datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog ) + "\n"
                 fileLog.write( szLogEntry )
                 szHtml += szLogEntry
@@ -150,7 +237,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
             dbcursor.close()
             # --- закрываем коннект с базой
             dbconnect.close( )
-            szLogEntry = u"DB CONNECT CLOSE           - 200 - "\
+            szLogEntry = u"DB CONNECT CLOSE            - 200 - "\
                          + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
                          + "\n"
             fileLog.write( szLogEntry )
@@ -175,30 +262,4 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
     #    raise Http404 ( )
 
 
-# строчка для вызова эерана с котировками c RBC:
-# http://export.rbc.ru/free/index.0/free.fcgi?period=DAILY&tickers=NASD&d1=20&m1=12&y1=2012&d2=25&m2=01&y2=2013&lastdays=09&separator=%3B&data_format=BROWSER&header=1
-#
-# Общий формат:
-# Вызов http://export.rbc.ru/free/index.0/free.fcgi?
-# - period=DAILY -- перод. бесплатно доступны только дневные
-# - tickers=NASD -- тикет (проверить, кажется доступны несколько тикетов или группы)
-# - d1=20 -- дата1, день,  (два символа, лидирующий ноль, не обязательно)
-# - m1=12 -- дата1, месяц (два символа, лидирующий ноль,  не обязательно)
-# - y1=2012 -- дата1, год (четыре символа,  не обязательно)
-# - d2=25 -- дата2, стартуем с дня,  (два символа, лидирующий ноль, не обязательно)
-# - m2=01 -- дата2, стартуем с месяца (два символа, лидирующий ноль,  не обязательно)
-# - y2=2013 -- дата2, год (четыре символа,  не обязательно)
-# - lastdays=09 -- покзать на это колличесто дней. Ели нет дата1 или дата2 то показывает lastdays последних дней из базы
-# - separator=%3B -- сепаратор (в данном сслучае ";"
-# - data_format=BROWSER -- выводить в броузер (можно в файл, но его сложнее парсить).
-# - header=1 -- выводить заголовок (1) или нет (0)... TICKER;DATE;OPEN;HIGH;LOW;CLOSE;VOL;WAPRICE
-# порядок выдачи:
-# - TICKER -- тикер
-# - DATE -- дата в формате YYYY-MM-DD
-# - OPEN -- цена (уровень) открытия
-# - HIGH -- цена (уровень) максимум дня
-# - LOW -- цена (уровень) минимум дня
-# - CLOSE --цена (уровень) закрытия
-# - VOL -- объём (для индексов не доступен)
-# - WAPRICE -- ???? фигня какая-то
 
