@@ -22,8 +22,96 @@ import urllib                                   # библиотека прео�
 # import timedelta
 # import random
 
+def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "", szURLtoPars="" ) :
+    # szCheckTIKER -- тикер который надо распарсить.
+    #   значение "TOTALALL" вызывает парсинг всего...
+    # szAddCommand -- дополнительная комманда. Бывает:
+    #   "" или "ADD" -- добавить новые значения
+    #   "DEL" -- удалить тикер и все значения по нему
+    #   "UPD" -- обновить данные по тиккеру (зачала DEL после NEW)
+    #   "NEW" -- прописать новый тиккер и добавить все значения
+    # szURLtoPars -- путь для парсинга... он нужен при добавлении тикера "NEW" чтобы
+    #    система знала по какому адресу брать информаию и что парсить
+    #
+    # если вызов проиходит через DJANGO то при отсутствии параметро szCheckTIKER содержит
+    # пустую строку. Если это так то все нафикЁ
+    if szCheckTIKER == "" :
+        return ()
 
-def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
+    # если вызов проиходит через DJANGO то при отсутствии параметро szAddCommand содержит
+    # пустую строку. Если это так, то предполагается "ADD" (добавление новых данных)
+    if szAddCommand == "" :
+        szAddCommand = "ADD"
+
+    szPathToLogFile = "./logs/parser-process.log"       # Путь для лог-файла. Если в пути есть
+                                                        # директории (типа /log/) убедитесь, что
+                                                        # они созданы заранее
+    szHtml = "<pre>"   # для отладки. Сюда сваливаем всю выдачу... В конце ее покажем в вебе
+
+    try:
+        fileLog = open( szPathToLogFile , 'a' )        # открываем log-файл на добавление
+        # определяем функцию записи в лог
+        def fuWriteLog ( szStatus= u"/TEST/TEST/TEST/TEST/TEST/ - 200" ) :
+            # Это функция записи в лог... Все что в нее попадат в качестве переменной
+            # обвязывается датой-временем и записывается в файл.
+            # На всякий случай это еще и возвращаем в return()
+            szLogEntry = "%32s - " % ( szStatus ) + \
+                         datetime.datetime.now(
+                             timezone.get_default_timezone( )
+                         ).strftime( "%d/%m/%Y %H:%M:%S.%f %z (%Z)" ) + "\n"
+            fileLog.write( szLogEntry )
+            return ( szLogEntry )
+
+        # проверяем szAddCommand на принадлежность к дополнительным коммандам
+        #
+        if szAddCommand not in { "ADD", "NEW", "DEL", "UPD" } :
+            szHtml += fuWriteLog( u"UNKNOW ADDITIONAL COMMAND   - 405" )
+            return ()
+
+        try:
+            # пробуем приконнектится к базе к базе и организовать курсор
+            dbconnect = MySQLdb.connect(passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
+            # --- создаем курсор БД ?? что-это
+            dbcursor=dbconnect.cursor()
+            # --- Коннект к БД есть. Пишем это событие в лог
+            szHtml += fuWriteLog( u"DB CONNECT OPEN             - 200" )
+
+            #----------------------------------------------------------------------------
+            # Если если пришла комманда "UPD" или "DEL" то чистим базу"
+            if szAddCommand in { "UPD", "DEL" } :
+                # читаем "szPathForParsing" из таблицы tbIndexName (
+                dbcursor.execute(
+                    u"""DELETE FROM db_stocks.tbIndexValue
+                    WHERE tbIndexValue.szTICKER = '%s';""" % szCheckTIKER )
+                szHtml += fuWriteLog( u">>> DELETED %011d ROW - 200" % dbcursor.rowcount )
+
+                # Если если пришла комманда "UPD", nто сначала делаем "DEL" а после "NEW"
+                szAddCommand = "NEW"
+
+
+
+
+            # --- исполняем все накопленные для MySQL комманды разом
+            dbconnect.commit()
+            # --- закрываем курсор
+            dbcursor.close()
+            # --- закрываем коннект с базой
+            dbconnect.close( )
+            szHtml += fuWriteLog ( u"DB CONNECT CLOSE            - 200" )
+        except Exception, szErrorCode:
+            # --- нет коннекта к БД.
+            szHtml += fuWriteLog ( u"DBERR %11s - 403" % szErrorCode )
+
+    except IOError:
+        szHtml += u"%s :лог-файл отсутсвует или поврежден<br />" % "ERROR"
+
+    finally:
+        szHtml += "</pre>"
+        szHtml += u"<b>ARG1=%s //// ARG2=%s</b>" % (szCheckTIKER, szAddCommand)
+        return HttpResponse ( szHtml )
+
+
+def parsRBC1 ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
     # szCheckTIKER -- тикер который надо распарсить
     # szAddCommand -- дополнительная комманда. Реагируем только на "NEW" (распарсить новый тиккер)
     # если вызов проиходит через DJANGO то при отсутствии параметро szCheckTIKER содержит
@@ -54,7 +142,7 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "" ) :
 
         # --- фаза 2: коннектимся к БД
         try:
-            dbconnect = MySQLdb.connect(user='root',passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
+            dbconnect = MySQLdb.connect(passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
             # --- Коннект к БД есть. Пишем это событие в лог
             szLogEntry = u"DB CONNECT OPEN             - 200 - "\
                      + datetime.datetime.now(timezone.get_default_timezone()).strftime( szDataForamtForLog )\
