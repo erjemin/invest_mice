@@ -69,8 +69,11 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "", szURLtoPars="" )
             return ()
 
         try:
-            # пробуем приконнектится к базе к базе и организовать курсор
-            dbconnect = MySQLdb.connect(passwd='qwas',db='db_stocks')  #???,cursorclass=MySQLdb.cursors.DictCursor)
+            # пробуем приконнектится к базе и организовать курсор
+            dbconnect = MySQLdb.connect( passwd='qwas', db='db_stocks')    # <--- для компа MCN
+            # dbconnect = MySQLdb.connect( db='db_stocks')                 # <--- для компа JUNK01
+            # dbconnect = MySQLdb.connect( host='192.168.1.105',
+            #     user='root', passwd='****', db='db_stocks')              # <--- для компа JUNK02
             # --- создаем курсор БД ?? что-это
             dbcursor=dbconnect.cursor()
             # --- Коннект к БД есть. Пишем это событие в лог
@@ -79,14 +82,14 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "", szURLtoPars="" )
             #----------------------------------------------------------------------------
             # Если если пришла комманда "UPD" или "DEL" то чистим базу"
             if szAddCommand in { "UPD", "DEL" } :
-                # читаем "szPathForParsing" из таблицы tbIndexName (
+                # удаляем и пишем в лог
                 dbcursor.execute(
                     u"""DELETE FROM db_stocks.tbIndexValue
                     WHERE tbIndexValue.szTICKER = '%s';""" % szCheckTIKER )
                 szHtml += fuWriteLog( u">>> DELETED %011d ROW - 200" % dbcursor.rowcount )
-
                 # Если если пришла комманда "UPD", nто сначала делаем "DEL" а после "NEW"
-                szAddCommand = "NEW"
+                if szAddCommand == "UPD" :
+                    szAddCommand == "NEW"
 
 
 
