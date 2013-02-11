@@ -195,10 +195,16 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "", szURLtoPars="" )
                 for szCurrentData in lszGettedData :
                     # разбиваем строку текущих данных и запоминаем во временном листе
                     lszCurrentData = szCurrentData.split(";")
-                    lszCurrentData[2] = float( lszCurrentData[2] )
-                    lszCurrentData[3] = float( lszCurrentData[3] )
-                    lszCurrentData[4] = float( lszCurrentData[4] )
-                    lszCurrentData[5] = float( lszCurrentData[5] )
+                    # оказывается иногда бывают "дыры" в данных и пустые ячейки
+                    # проще всего эти данные удалить но как-то неправильно это
+                    # но иначе придумать не получается, т.к. лакуна в произвоьном месте
+                    try :
+                        lszCurrentData[2] = float( lszCurrentData[2] )
+                        lszCurrentData[3] = float( lszCurrentData[3] )
+                        lszCurrentData[4] = float( lszCurrentData[4] )
+                        lszCurrentData[5] = float( lszCurrentData[5] )
+                    except:
+                        continue
                     # удаляем два ненужных элемента выдачи VOL и WAPRICE
                     lszCurrentData.pop()
                     lszCurrentData.pop()
@@ -207,13 +213,19 @@ def parsRBC ( request, szCheckTIKER = "ALL", szAddCommand = "", szURLtoPars="" )
                         INSERT INTO db_stocks.tbIndexValue
                         ( szTICKER , tmDATE , fOPEN  , fHIGH , fLOW , fCLOSE )
                         VALUES
-                        ( \"%s\", \"%s\", %f, %f, %f, %f );
+                        ( '%s', '%s', %f, %f, %f, %f );
                         """ % (lszCurrentData[0],
                                lszCurrentData[1],
                                lszCurrentData[2],
                                lszCurrentData[3],
                                lszCurrentData[4],
                                lszCurrentData[5]) )
+# отладка ---+------------>  szHtml += "'%s', '%s', %f, %f, %f, %f" %  (lszCurrentData[0],
+         #   |                                                  lszCurrentData[1],
+         #   |                                                  lszCurrentData[2],
+         #   |                                                  lszCurrentData[3],
+         #   |                                                  lszCurrentData[4],
+         #   +---------------------------------------------->   lszCurrentData[5])  + "\n"
                 # пишем в лог что все ок
                 szHtml += fuWriteLog( u">>> WRITE ROW2DB: %09d - 200" % len(lszGettedData) )
 
