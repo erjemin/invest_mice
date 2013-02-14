@@ -175,7 +175,7 @@ def parsRBC ( request, szCheckTIKER = "TOTAL_TOTAL", szAddCommand = "", szURLtoP
                             { "Content-type": "application/x-www-form-urlencoded",
                               "Accept": "text/plain",
                               "Accept-Charset": "utf-8",
-                              "User-Agent": "MadMouse/0.2" } )
+                              "User-Agent": "MadMouse/0.3" } )
 # ------------- ОТЛАДКА
 #                       szHtml += szURLtoPars + urllib.urlencode( { "period": "DAILY",
 #                                                                   "tickers": szCheckTIKER,

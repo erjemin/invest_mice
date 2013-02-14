@@ -9,10 +9,12 @@ admin.autodiscover()
 
 from www.views import hello
 from www.parser import parsRBC
+from www.indicator import indicator
 
 urlpatterns = patterns('',
     ( r'^hello/$', hello ),
     ( r'^parser/(\S{0,16})/(\S{0,3})/$', parsRBC ), # передаем два параметра (если получится)
+    ( r"^indicator/$", indicator),
     # Examples:
     # url(r'^$', 'invest_mice.views.home', name='home'),
     # url(r'^invest_mice/', include('invest_mice.foo.urls')),
