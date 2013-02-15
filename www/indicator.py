@@ -16,7 +16,8 @@ import datetime                                 # библиотека рабо�
 # import timedelta
 import pytz                                     # библиотека работы с временными зонами (TMZ, UTC и прочая фигня)
 import MySQLdb                                  # библиотека доступа к MySQL
-import PIL                                      # библиоткеа работы с графикой
+# import PIL                                      # библиоткеа работы с графикой
+import math                                     # библиотека математическх вычислений
 from PIL import Image, ImageDraw
 
 # import tzinfo
@@ -26,13 +27,38 @@ def indicator ( request ) :
     szHTML = ""
     tmStart = datetime.datetime.now( timezone.get_default_timezone( ) )  # <-- для отладки, измерялка скорости
     szPathToFile = "/static/img/test.png"      # <-- путь будем вычислять и сворачивать в хеш
-                                                # каждому тикеру для каждой даты отдельный имидж
+                                               # каждому тикеру для каждой даты отдельный имидж
     iSize = 480
-    image = Image.new("RGBA", (iSize, iSize), (0,0,0,128) )
-    draw = ImageDraw.Draw(image)
-    draw.ellipse( (20,20,460,400), fill="yellow", outline="blue")
+    fGoldenRatio = ( math.sqrt( 5 ) - 1 ) / 2
+    imgBox = Image.new("RGBA", ( int ( iSize / fGoldenRatio), iSize), (0,0,0,128) )
+    def fuCutLine ( iNum, iLengthLine = iSize ) :
+        # функуия нарезка отрезка...
+        # iNum - итерация
+        if iNum == 0:
+            return (iLengthLine )
+        else:
+            dot1 = int ( iLengthLine * (fGoldenRatio ** iNum) )
+            return  ( dot1 )
+
+    szHTML += str ( fuCutLine( 0, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 1, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 2, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 3, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 4, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 5, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 6, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 7, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 8, 1000)) + "<br />"
+
+
+    draw = ImageDraw.Draw(imgBox)
+    draw.rectangle( (
+         0 , 0 ,
+        fuCutLine( 1 ),
+        fuCutLine( 1, int ( iSize * fGoldenRatio) ),
+        ), (0,0,0,128), outline="blue")
     del draw
-    image.save("." + szPathToFile, "PNG")
+    imgBox.save("." + szPathToFile, "PNG")
 
 # отладка
     szHTML += "<center><img src='%s' />" % szPathToFile
