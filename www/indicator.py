@@ -30,8 +30,7 @@ def indicator ( request ) :
                                                # каждому тикеру для каждой даты отдельный имидж
     iSize = 480
     fGoldenRatio = ( math.sqrt( 5 ) - 1 ) / 2
-    imgBox = Image.new("RGBA", ( int ( iSize / fGoldenRatio), iSize), (0,0,0,128) )
-    def fuCutLine ( iNum, iLengthLine = iSize ) :
+    def fuCutLine ( iLengthLine = iSize, iNum = 1  ) :
         # функуия нарезка отрезка...
         # iNum - итерация
         if iNum == 0:
@@ -39,24 +38,28 @@ def indicator ( request ) :
         else:
             dot1 = int ( iLengthLine * (fGoldenRatio ** iNum) )
             return  ( dot1 )
+    iX1 = 0
+    iX2 = int ( iSize / fGoldenRatio )
+    iY1 = 0
+    iY2 = int ( iSize )
 
-    szHTML += str ( fuCutLine( 0, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 1, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 2, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 3, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 4, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 5, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 6, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 7, 1000)) + "<br />"
-    szHTML += str ( fuCutLine( 8, 1000)) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 0 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 1 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 2 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 3 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 4 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 5 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 6 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 7 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 8 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 9 )) + "<br />"
+    szHTML += str ( fuCutLine( 1000, 10 )) + "<br />"
 
-
+    imgBox = Image.new("RGBA", ( iX2+1, iY2+1 ), (0,0,0,0) )
     draw = ImageDraw.Draw(imgBox)
     draw.rectangle( (
-         0 , 0 ,
-        fuCutLine( 1 ),
-        fuCutLine( 1, int ( iSize * fGoldenRatio) ),
-        ), (0,0,0,128), outline="blue")
+         iX1 , iY1 , iX2, iY2
+        ), (0,0,0,0), outline="blue")
     del draw
     imgBox.save("." + szPathToFile, "PNG")
 
