@@ -63,22 +63,22 @@ def indicator ( request ) :
             u" WHERE tbIndexValue.szTICKER =  '%s';" % szTIKER )
         tmDataIndicator = dbcursor.fetchone()
         # ---- отладка BEGIN
-        szHTML += "<h2>{%s} <small><i>%s</i></small></h2>" % (szTIKER, str( tmDataIndicator[0] ) )
+        szHTML += u"<h2>{%s} <small><i>%s</i></small></h2>" % (szTIKER, str( tmDataIndicator[0] ) )
         # ---- отладка END
         dbcursor.execute(
             u"SELECT tbIndexValue.fCLOSE" # (*01*) можно вывести для отладки еще и ---> ", tbIndexValue.tmDATE"
             u" FROM tbIndexValue"
             u" WHERE tbIndexValue.szTICKER =  '%s'"
             u" ORDER BY tbIndexValue.tmDATE DESC"
-            u" LIMIT 521;" % szTIKER )
+            u" LIMIT 322;" % szTIKER )
         lstfDataAll = dbcursor.fetchall() # <--- Здесь результаты запроса. Цены закрытия в обратной хронологии
         lstfPercentAll = []               # <--- Здесь будет процент дневного роста/падения в %%
 
-        fPreviousItem = ()  # <---------------------- на старте выставляем "нулевой" картеж
+        iPreviousItem = ()  # <---------------------- на старте выставляем "нулевой" картеж
                                                     # Он является признаком перваой итерации
         for fCurrentItem in lstfDataAll :
-            if fPreviousItem == ():
-                fPreviousItem = fCurrentItem
+            if iPreviousItem == ():
+                iPreviousItem = fCurrentItem
             else:
                 # Общая формула для прироста выглядит так:
                 #
@@ -89,80 +89,81 @@ def indicator ( request ) :
                 # рост_в_%% = ( Показатель_тек.периода / Показатель_пред._периода -1 ) × 100%.
                 #
                 # но в наших рассчетах не забываеv, что все уже отсотировано в братном порядке,
-                # т.е. fPreviousItem -- это предыдущий элемент, т.е. содержит следующее для
+                # т.е. iPreviousItem -- это предыдущий элемент, т.е. содержит следующее для
                 # текущего периода значение...
                 #
                 # ----- ОТЛАДКА BEGIN
-                # szHTML += "<small><tt>%2.3f%%   --- %s //// %s</tt></small><br />" % (
-                #    100. * ( fPreviousItem[0] / fCurrentItem[0] - 1. ) ,
-                #    fPreviousItem[0],
-                #    fCurrentItem[0],
-                #    # fPreviousItem[1], # (*1*) Чобы еже выводить и дату надо разкомментировать (*01*)
+                # szHTML += u"<small><tt>%2.3f%%   --- %s //// %s</tt></small><br />" % (
+                #    100. * ( iPreviousItem[0] / fCurrentItem[0] - 1. ) ,
+                #    iPreviousItem[0],
+                #    fCurrentItem[0]
+                #    # iPreviousItem[1], # (*1*) Чобы еже выводить и дату надо разкомментировать (*01*)
                 #    )
                 # ----- ОТЛАДКА END
-                lstfPercentAll.append( 100. * ( fPreviousItem[0] / fCurrentItem[0] - 1. ) )
-                fPreviousItem = fCurrentItem
+                lstfPercentAll.append( 100. * ( iPreviousItem[0] / fCurrentItem[0] - 1. ) )
+                iPreviousItem = fCurrentItem
         # ---- отладка BEGIN
-        # szHTML += "<small><tt>%s</tt></small><br />" % lstfPercentAll
+        # szHTML += u"<small><tt>%s</tt></small><br />" % lstfPercentAll
         # ---- отладка END
 
         # для простоты и скорости просто используем лист из уже предрассчитанных по правилам
         # золотого сечения значений. Для дневного идикатора и по дневным данным это:
         #   [ 1, 2, 4, 6, 11, 17, 29, 46, 76, 122, 199, 321, 521 ]
-        # это обратные отрезки времени (в днях) от текущей даты. Их 13, т.к. при вычислении
-        # процентов роста получится 12 = 3*4 интервалов. Т.е. это три оборота индикатора.
+        # это обратные отрезки времени (в днях) от текущей даты. Их 12, но нулевог значения нет.
+        # Т.е. 13 которые определяют 12 = 3*4 интервалов. Т.е. это три оборота индикатора.
         # Последовательность, если чо, можно рассчитать так:
         #   for iCount in range(-1, -14, -1) :
         #       iCurrentRow = fuCutLine( 1, iCount) - 1
 
-        lstiDescendingDataCut = [ 1, 2, 4, 6, 11, 17, 29, 46, 76, 122, 199, 321, 521 ]
+        lstiDescendingDataCut = [ 1, 2, 4, 6, 11, 17, 29, 46, 76, 122, 199, 321] # , 521 ]
 
-        lstfData4Indicator = []           # <--- Здесь будет данные (котировки) только для дат индикатора
-        lstfPercent4Indicator = []        # <--- Здесь будет процент средне-дневного роста/падения для дат индикатора
+        lstfData4Indicator = []             # <--- Здесь будет данные (котировки) только для дат индикатора
+        lstfPercent4Indicator = []          # <--- Здесь будет процент средне-дневного роста/падения для дат индикатора
+        lstfPercentAverage4Indicator = []   # <--- Здесь будет процент средне-дневного роста/падения для периодов индикатора
+        lstfPercentMax4Indicator = []       # <--- Здесь будет процент максимального роста для периодов индикатора
+        lstfPercentMin4Indicator = []       # <--- Здесь будет процент максимального падения для периодов индикатора
 
-        fPreviousItem = 0  # это будет признаком первой итерации
-
+        iPreviousItem = 0                   # это будет признаком первой итерации
         for iCurrentItem in lstiDescendingDataCut :
-            if fPreviousItem == 0 :
-                fPreviousItem = iCurrentItem
-                lstfData4Indicator.append( lstfDataAll[iCurrentItem-1][0] )
-                continue
-            else:
-                lstfData4Indicator.append( lstfDataAll[iCurrentItem-1][0] )
-            fPreviousItem = iCurrentItem
+            # Тут считаем средний прирост за период. Формула похожа на формула прироста:
+            #
+            # ср_рост_в_%% = ( Показатель_тек.периода / Показатель_пред._периода -1 ) × 100% / Число_периодов
+            #
+            # но в наших рассчетах не забываеv, что все уже отсотировано в братном порядке,
+            # т.е. iPreviousItem -- это предыдущий элемент, т.е. содержит следующее для
+           # текущего периода значение...
+            lstfPercent4Indicator.append(
+                (lstfDataAll[iPreviousItem][0] / lstfDataAll[iCurrentItem][0] - 1.)
+                * 100. / ( iCurrentItem - iPreviousItem ) )
+            lstfPercentAverage4Indicator.append(
+                (lstfDataAll[0][0] / lstfDataAll[iCurrentItem][0] - 1.)
+                * 100. / iCurrentItem )
+            lstfPercentMax4Indicator.append( max( lstfPercentAll[ iPreviousItem : iCurrentItem ] ) )
+            lstfPercentMin4Indicator.append( min( lstfPercentAll[ iPreviousItem : iCurrentItem ] ) )
+            iPreviousItem = iCurrentItem
             # ---- отладка BEGIN
-            szHTML += "<tt>--- <b>%s</b> --- <small>%s</small></tt><br />" % (
-                lstfData4Indicator,
-                lstfDataAll[iCurrentItem-1][0],
-                )
+            # szHTML += u"<tt>%00d<br /><small>--- Ср.1: <b>%s</b><br />--- Cр2.: <i>%s</i><br />-=- макс: %s<br />-=- мин.: %s</small></tt><br />" % (
+            #        iCurrentItem,
+            #        lstfPercent4Indicator,
+            #        lstfPercentAverage4Indicator,
+            #        lstfPercentMax4Indicator,
+            #        lstfPercentMin4Indicator,
+            #    )
             # ---- отладка END
 
-        # но пока оставим так... пусть эти числа честно вычисляются. Мало-ли что...
-        for iCount in range(-1, -14, -1) :
-            iCurrentRow = fuCutLine( 1, iCount) - 1
-            lstfData4Indicator.append ( lstfDataAll[ iCurrentRow-1 ][ 0 ] )
-            if iCount < -1 :
-                # Тут считаем средний прирост за период. Формула похожа на формула прироста:
-                #
-                # ср_рост_в_%% = ( Показатель_тек.периода / Показатель_пред._периода -1 ) × 100% / Число_периодов
-                #
-                # но в наших рассчетах не забываеv, что все уже отсотировано в братном порядке,
-                # т.е. fPreviousItem -- это предыдущий элемент, т.е. содержит следующее для
-                # текущего периода значение...
-                lstfPercent4Indicator.append(
-                    100. * ( lstfData4Indicator[0] - lstfData4Indicator[abs(iCount)-1] )
-                    / iCurrentRow / lstfData4Indicator[abs(iCount)-1]
-                )
-            # ---- отладка BEGIN
-            szHTML += "<tt>%02d: %05d // ~~ %s **%s** ~~~~ </tt><br />" % (
-                abs(iCount),
-                fuCutLine( 1, iCount ),
-                str( lstfDataAll[ iCurrentRow-0 ][ 0 ] )  ,
-                str( lstfPercent4Indicator ),
-                # str( lstfData4Indicator ),
-                )
-            # ---- отладка END
-        del lstfDataAll
+        # ---- отладка BEGIN
+        szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />--- Cр2.: <i>%s</i><br />-=- макс: %s<br />-=- мин.: %s</small></tt><br />" % (
+            lstfPercent4Indicator,
+            lstfPercentAverage4Indicator,
+            lstfPercentMax4Indicator,
+            lstfPercentMin4Indicator,
+            )
+        szHTML += u"<big>МАХ = %f // MIN = %f </big><br />" % ( max( lstfPercentAll ), min( lstfPercentAll ) )
+        # ---- отладка END
+
+        del lstfDataAll               # <--- этот список довольно большой и ее можно удалить если это поможе скорости
+        del lstfPercentAll            # <--- этот список довольно большой и ее можно удалить если это поможе скорости
+
 
         imgBox = Image.new("RGBA", ( iX2+1, iY2+1 ), (0,0,0,0) )
         # Рисуем вот такую структуру индикаторв
