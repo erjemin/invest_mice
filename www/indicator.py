@@ -29,6 +29,9 @@ def indicator ( request ) :
     szPathToFile = "/static/img/test.png"      # <-- путь будем вычислять и сворачивать в хеш
                                                # каждому тикеру для каждой даты отдельный имидж
     iSize = 320
+    # -----отладка ----
+    # -----устанавливаем тикер----
+    szTIKER = "SPX"
     fGoldenRatio = ( math.sqrt( 5 ) - 1 ) / 2
     def fuCutLine ( iLengthLine = iSize, iNum = 1  ) :
         # функуия нарезка отрезка по закону залотого сечения...
@@ -52,9 +55,6 @@ def indicator ( request ) :
         # согдаем курсор базы
         dbcursor=dbconnect.cursor()
 
-        # -----отладка ----
-        # -----устанавливаем тикер----
-        szTIKER = "DJI"
 
         # узнаем самую последююю дату
         dbcursor.execute(
@@ -117,7 +117,6 @@ def indicator ( request ) :
 
         lstiDescendingDataCut = [ 1, 2, 4, 6, 11, 17, 29, 46, 76, 122, 199, 321] # , 521 ]
 
-        lstfData4Indicator = []             # <--- Здесь будет данные (котировки) только для дат индикатора
         lstfPercent4Indicator = []          # <--- Здесь будет процент средне-дневного роста/падения для дат индикатора
         lstfPercentAverage4Indicator = []   # <--- Здесь будет процент средне-дневного роста/падения для периодов индикатора
         lstfPercentMax4Indicator = []       # <--- Здесь будет процент максимального роста для периодов индикатора
@@ -142,7 +141,11 @@ def indicator ( request ) :
             lstfPercentMin4Indicator.append( min( lstfPercentAll[ iPreviousItem : iCurrentItem ] ) )
             iPreviousItem = iCurrentItem
             # ---- отладка BEGIN
-            # szHTML += u"<tt>%00d<br /><small>--- Ср.1: <b>%s</b><br />--- Cр2.: <i>%s</i><br />-=- макс: %s<br />-=- мин.: %s</small></tt><br />" % (
+            # szHTML += u"<tt>%00d<br /><small>" \
+            #          u"--- Ср.1: <b>%s</b><br />" \
+            #          u"--- Cр2.: <i>%s</i><br />" \
+            #          u"-=- макс: %s<br />" \
+            #          u"-=- мин.: %s</small></tt><br />" % (
             #        iCurrentItem,
             #        lstfPercent4Indicator,
             #        lstfPercentAverage4Indicator,
@@ -152,17 +155,30 @@ def indicator ( request ) :
             # ---- отладка END
 
         # ---- отладка BEGIN
-        szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />--- Cр2.: <i>%s</i><br />-=- макс: %s<br />-=- мин.: %s</small></tt><br />" % (
+        szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />" \
+                  u"--- Cр2.: <i>%s</i><br /" \
+                  u">-=- макс: %s<br />" \
+                  u"-=- мин.: %s</small></tt><br />" % (
             lstfPercent4Indicator,
             lstfPercentAverage4Indicator,
             lstfPercentMax4Indicator,
             lstfPercentMin4Indicator,
             )
-        szHTML += u"<big>МАХ = %f // MIN = %f </big><br />" % ( max( lstfPercentAll ), min( lstfPercentAll ) )
+        szHTML += u"<big>МАХ = %+03.5f // MIN = %+03.5f </big> ### %s<br />" % (
+            max( lstfPercentAll ),
+            min( lstfPercentAll ),
+            int( 1 + 2. * max ( [ abs( max(lstfPercentAll )), abs(min( lstfPercentAll )) ] ) ) * 0.5,
+            )
         # ---- отладка END
 
-        del lstfDataAll               # <--- этот список довольно большой и ее можно удалить если это поможе скорости
-        del lstfPercentAll            # <--- этот список довольно большой и ее можно удалить если это поможе скорости
+        # del lstfDataAll               # <--- этот список довольно большой и ее можно удалить если это поможе скорости
+        # del lstfPercentAll            # <--- этот список довольно большой и ее можно удалить если это поможе скорости
+
+        # базис нормирования (округленное вверх до ближайшего 0.5)
+        # fValuationBasis = int( 1 + 2. * max ( [ abs( max( lstfPercentMax4Indicator ) ),
+        #                                        abs( min( lstfPercentMin4Indicator ) ) ]) ) * 0.5
+        fValuationBasis = int( 1 + 2. * max ( [ abs( max( lstfPercent4Indicator ) ),
+                                                abs( min( lstfPercent4Indicator ) ) ]) ) * 0.5
 
 
         imgBox = Image.new("RGBA", ( iX2+1, iY2+1 ), (0,0,0,0) )
@@ -182,27 +198,116 @@ def indicator ( request ) :
         drwIndicator = ImageDraw.Draw(imgBox)
         # ----- (ФАЗА 0) рисуем внешнюю коробочку
         drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (0,0,0,0), outline="blue")
+
+        iCurrentItem = 0        # <--- Счетчик итераций (элементов индикатора)
         # рисуем вложенную структуру (1) -> (2) -> (3) -> (4)
         for iCount in range(3) :
             # ---- ( Фаза 1)
+            # нормируем
+            # html += "<td bgcolor='#%02xe0e0'>" % int(0x9d-((dim[iTmpX][iTmpY][0]-lstFocusInfo[5][0])*98.)/lstFocusInfo[5][1])
+            if lstfPercent4Indicator[iCurrentItem] > 0 :
+                # если больше нуля, то зеленое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255 ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            elif lstfPercent4Indicator[iCurrentItem] == 0 :
+                # если нуль, то серое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver" )
+            else:
+                # если мньше нуля, то красное
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (255,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            iCurrentItem += 1
             iX2 = fuCutLine( iX2 - iX1 ) + iX1
-            drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (100,100,0,255), outline="silver")
+
             # ---- ( Фаза 2)
+            if lstfPercent4Indicator[iCurrentItem] > 0 :
+                # если больше нуля, то зеленое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255 ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            elif lstfPercent4Indicator[iCurrentItem] == 0 :
+                # если нуль, то серое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver" )
+            else:
+                # если мньше нуля, то красное
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (255,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            iCurrentItem += 1
             iY1 = iY2 - fuCutLine( iY2 - iY1 )
-            drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (200,200,200,255), outline="blue")
             # ---- ( Фаза 3)
+            if lstfPercent4Indicator[iCurrentItem] > 0 :
+                # если больше нуля, то зеленое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255 ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            elif lstfPercent4Indicator[iCurrentItem] == 0 :
+                # если нуль, то серое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver")
+            else:
+                # если мньше нуля, то красное
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (255,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            iCurrentItem += 1
             iX1 = iX2 - fuCutLine( iX2 - iX1 )
-            drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (0,0,0,255), outline="blue")
             # ---- ( Фаза 4)
+            if lstfPercent4Indicator[iCurrentItem] > 0 :
+                # если больше нуля, то зеленое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255 ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            elif lstfPercent4Indicator[iCurrentItem] == 0 :
+                # если нуль, то серое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver")
+            else:
+                # если мньше нуля, то красное
+                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
+                    (255,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     int (255. - 255. * abs( lstfPercent4Indicator[iCurrentItem]) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            iCurrentItem += 1
             iY2 = iY1 + fuCutLine( iY2 - iY1 )
-            drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (0,0,0,255), outline="blue")
 
 
-            drwIndicator.rectangle( ( 10 , 10 , 20, 20 ), fill="red" , outline="red")
-            # font = ImageFont.truetype("./static/fonts/arial.ttf", 10)
-            font = ImageFont.load_default()
-            drwIndicator.setink( "black" )
-            drwIndicator.text( (25, 10), "100%", font = font  )
+        drwIndicator.rectangle( ( 10 , 10 , 20, 20 ), fill="red" , outline="red")
+        # font = ImageFont.truetype("./static/fonts/arial.ttf", 10)
+        font = ImageFont.load_default()
+        drwIndicator.setink( "black" )
+        drwIndicator.text( (25, 10), "100%", font = font  )
 
         del drwIndicator
         imgBox.save("." + szPathToFile, "PNG")
