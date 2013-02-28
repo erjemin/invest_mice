@@ -23,16 +23,33 @@ from PIL import Image, ImageDraw, ImageFont
 # import tzinfo
 # import random
 
-def indicator ( request ) :
+def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
+        # szTIKER -- тикер для которого рисуем индикатор.
+        # szCommand -- дополнительная комманда. Бывает:
+        #   "" или "VIEW" -- просмотреть
+        # szURLtoPars -- дата на которую строится индикатор. YYYY--MM-DD
+
     szHTML = ""
     tmStart = datetime.datetime.now( timezone.get_default_timezone( ) )  # <-- для отладки, измерялка скорости
-    szPathToFile = "/static/img/test.png"      # <-- путь будем вычислять и сворачивать в хеш
+    szPathToFile = "/static/img/"      # <-- путь будем вычислять и сворачивать в хеш
                                                # каждому тикеру для каждой даты отдельный имидж
     iSize = 320
     # -----отладка ----
     # -----устанавливаем тикер----
-    szTIKER = "SPX"
+    if szTIKER == "" :
+        szTIKER = "MICEX"
+
+    try:
+        szData = szData.split("-")
+        tmDataIndicator = datetime.date(int(szData[0]), int(szData[1]), int(szData[2]))
+    except:
+        tmDataIndicator = datetime.datetime.now( )
+
+    if szCommand == "" :
+        szCommand = "VIEW"
+
     fGoldenRatio = ( math.sqrt( 5 ) - 1 ) / 2
+
     def fuCutLine ( iLengthLine = iSize, iNum = 1  ) :
         # функуия нарезка отрезка по закону залотого сечения...
         # iNum - итерация
@@ -41,6 +58,13 @@ def indicator ( request ) :
         else:
             iDot = int ( iLengthLine * (fGoldenRatio ** iNum) )
             return  ( iDot )
+
+    # ------------ отладка BEGIN
+    szHTML += "szData = %s<br />" % szData
+    szHTML += "szCommand = %s<br />" % szCommand
+    szHTML += "szCommand = %s<br />" % tmDataIndicator
+    # ------------ отладка END
+
     iX1 = 0
     iX2 = int ( iSize / fGoldenRatio )
     iY1 = 0
@@ -60,17 +84,23 @@ def indicator ( request ) :
         dbcursor.execute(
             u"SELECT MAX( tbIndexValue.tmDATE )"
             u" FROM  tbIndexValue"
-            u" WHERE tbIndexValue.szTICKER =  '%s';" % szTIKER )
+            u" WHERE tbIndexValue.szTICKER =  '%s' AND"
+            u" tbIndexValue.tmDATE <= '%s';" % ( szTIKER, tmDataIndicator ) )
         tmDataIndicator = dbcursor.fetchone()
+
+        # ------------ отладка BEGIN
+        szHTML += "szCommand = %s<br />" % tmDataIndicator[0]
+        # ------------ отладка END
         # ---- отладка BEGIN
         szHTML += u"<h2>{%s} <small><i>%s</i></small></h2>" % (szTIKER, str( tmDataIndicator[0] ) )
         # ---- отладка END
         dbcursor.execute(
             u"SELECT tbIndexValue.fCLOSE" # (*01*) можно вывести для отладки еще и ---> ", tbIndexValue.tmDATE"
             u" FROM tbIndexValue"
-            u" WHERE tbIndexValue.szTICKER =  '%s'"
+            u" WHERE tbIndexValue.szTICKER =  '%s' AND"
+            u" tbIndexValue.tmDATE <= '%s'"
             u" ORDER BY tbIndexValue.tmDATE DESC"
-            u" LIMIT 322;" % szTIKER )
+            u" LIMIT 322;" % ( szTIKER, tmDataIndicator[0] ) )
         lstfDataAll = dbcursor.fetchall() # <--- Здесь результаты запроса. Цены закрытия в обратной хронологии
         lstfPercentAll = []               # <--- Здесь будет процент дневного роста/падения в %%
 
@@ -119,6 +149,9 @@ def indicator ( request ) :
 
         lstfPercent4Indicator = []          # <--- Здесь будет процент средне-дневного роста/падения для дат индикатора
         lstfPercentAverage4Indicator = []   # <--- Здесь будет процент средне-дневного роста/падения для периодов индикатора
+        # -----------
+        # lstfPercent4Indicator = lstfPercentAverage4Indicator
+        # -----------
         lstfPercentMax4Indicator = []       # <--- Здесь будет процент максимального роста для периодов индикатора
         lstfPercentMin4Indicator = []       # <--- Здесь будет процент максимального падения для периодов индикатора
 
@@ -155,6 +188,9 @@ def indicator ( request ) :
             # ---- отладка END
 
         # ---- отладка BEGIN
+        # ----------- проверка гипотезы БЕГИН
+        lstfPercent4Indicator = lstfPercentAverage4Indicator
+        # ----------- проверка гипотезы ЕНД
         szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />" \
                   u"--- Cр2.: <i>%s</i><br /" \
                   u">-=- макс: %s<br />" \
@@ -214,9 +250,6 @@ def indicator ( request ) :
                      255),
                     outline="silver"
                 )
-            elif lstfPercent4Indicator[iCurrentItem] == 0 :
-                # если нуль, то серое
-                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver" )
             else:
                 # если мньше нуля, то красное
                 drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
@@ -239,9 +272,6 @@ def indicator ( request ) :
                      255),
                     outline="silver"
                 )
-            elif lstfPercent4Indicator[iCurrentItem] == 0 :
-                # если нуль, то серое
-                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver" )
             else:
                 # если мньше нуля, то красное
                 drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
@@ -263,9 +293,6 @@ def indicator ( request ) :
                      255),
                     outline="silver"
                 )
-            elif lstfPercent4Indicator[iCurrentItem] == 0 :
-                # если нуль, то серое
-                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver")
             else:
                 # если мньше нуля, то красное
                 drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
@@ -287,9 +314,6 @@ def indicator ( request ) :
                      255),
                     outline="silver"
                 )
-            elif lstfPercent4Indicator[iCurrentItem] == 0 :
-                # если нуль, то серое
-                drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ), (128,128,128,255), outline="silver")
             else:
                 # если мньше нуля, то красное
                 drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),
@@ -302,14 +326,53 @@ def indicator ( request ) :
             iCurrentItem += 1
             iY2 = iY1 + fuCutLine( iY2 - iY1 )
 
+        # рисуем в центре серенький прямоугольчик с крестиком
+        drwIndicator.rectangle( ( iX1 , iY1 , iX2, iY2 ),  (255, 255, 255, 255), outline="silver" )
+        drwIndicator.setink( "silver" )         # <--- устанавливаем цвет рисования
+        drwIndicator.line( ( iX1 , iY1 , iX2, iY2) , fill=None, width=1)
+        drwIndicator.line( ( iX2 , iY1 , iX1, iY2) , fill=None, width=1)
 
-        drwIndicator.rectangle( ( 10 , 10 , 20, 20 ), fill="red" , outline="red")
-        # font = ImageFont.truetype("./static/fonts/arial.ttf", 10)
-        font = ImageFont.load_default()
-        drwIndicator.setink( "black" )
-        drwIndicator.text( (25, 10), "100%", font = font  )
+        # рисуем поминальник: имя тикера и дату
+        iX1 = iSize + 10
+        drwIndicator.setink( "black" )          # <--- устанавливаем цвет рисования
+        font = ImageFont.truetype("./static/fonts/cour.ttf", 12)
+        # font = ImageFont.load_default()         # <--- загружаем шрифт
+        drwIndicator.text( (iX1, 5), szTIKER, font = font  )
+        drwIndicator.text( (iX1, 20),
+            tmDataIndicator[0].strftime( "%d-%b-%Y" ), font = font  )
+
+        # рисуем шкалу справа
+        iY1 = 37
+        for iCurrentItem in range ( int( 2 * fValuationBasis ), int( -2 * fValuationBasis ) - 1, -1  ) :
+            # рисуем циферки
+            if iCurrentItem == 0:  # для нулевого значения не нужен знак... а то не красиво
+                drwIndicator.text( (iX1+15, iY1),  " 0.0%" , font = font  )
+            else:
+                drwIndicator.text( (iX1+15, iY1), ( "%+2.1f%%" % ( iCurrentItem * 0.5 ) ) , font = font  )
+            # рисуем цветные квадратики-шкалу
+            if iCurrentItem > 0 :
+                # если больше нуля, то зеленое
+                drwIndicator.rectangle( ( iX1 , iY1 , iX1+10, iY1+10 ),
+                    (int (255. - 255. * abs( iCurrentItem * 0.5 ) / fValuationBasis ) ,
+                     255 ,
+                     int (255. - 255. * abs( iCurrentItem * 0.5 ) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            else:
+                # если мньше нуля, то красное
+                drwIndicator.rectangle( ( iX1 , iY1 , iX1+10, iY1+10 ),
+                    (255,
+                     int (255. - 255. * abs( iCurrentItem * 0.5 ) / fValuationBasis ) ,
+                     int (255. - 255. * abs( iCurrentItem * 0.5 ) / fValuationBasis ) ,
+                     255),
+                    outline="silver"
+                )
+            iY1 += 15
 
         del drwIndicator
+
+        szPathToFile += "%s_%s_test.png" % ( szTIKER, tmDataIndicator[0].strftime( "%Y-%m-%d" ) )
         imgBox.save("." + szPathToFile, "PNG")
 
         # отладка

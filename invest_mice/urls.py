@@ -14,7 +14,7 @@ from www.indicator import indicator
 urlpatterns = patterns('',
     ( r'^hello/$', hello ),
     ( r'^parser/(\S{0,16})/(\S{0,3})/$', parsRBC ), # передаем два параметра (если получится)
-    ( r"^indicator/$", indicator),
+    ( r"^indicator/(\S{0,16})/(\d{0,4}-\d{0,2}-\d{0,2})/(\S{0,4})/$", indicator),
     # Examples:
     # url(r'^$', 'invest_mice.views.home', name='home'),
     # url(r'^invest_mice/', include('invest_mice.foo.urls')),
