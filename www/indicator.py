@@ -29,7 +29,13 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
         #   "" или "VIEW" -- просмотреть
         # szURLtoPars -- дата на которую строится индикатор. YYYY--MM-DD
 
-    szHTML = ""
+    szHTML = u"<!DOCTYPE html>" \
+             u"<html>" \
+             u" <head>" \
+             u"  <title>Bootstrap 101 Шаблон</title>" \
+             u"  <link href='/static/css/bootstrap.min.css' rel='stylesheet' media='screen'>" \
+             u" </head>" \
+             u"<body>"
     tmStart = datetime.datetime.now( timezone.get_default_timezone( ) )  # <-- для отладки, измерялка скорости
     szPathToFile = "/static/img/"      # <-- путь будем вычислять и сворачивать в хеш
                                                # каждому тикеру для каждой даты отдельный имидж
@@ -39,11 +45,15 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
     if szTIKER == "" :
         szTIKER = "MICEX"
 
+    if szData == "" :
+        szData = datetime.datetime.now( )
+
     try:
         szData = szData.split("-")
         tmDataIndicator = datetime.date(int(szData[0]), int(szData[1]), int(szData[2]))
     except:
         tmDataIndicator = datetime.datetime.now( )
+    szData = tmDataIndicator.strftime( "%Y-%m-%d" )
 
     if szCommand == "" :
         szCommand = "VIEW"
@@ -60,9 +70,9 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
             return  ( iDot )
 
     # ------------ отладка BEGIN
-    szHTML += "szData = %s<br />" % szData
-    szHTML += "szCommand = %s<br />" % szCommand
-    szHTML += "szCommand = %s<br />" % tmDataIndicator
+    # szHTML += "szData = %s<br />" % szData
+    # szHTML += "szCommand = %s<br />" % szCommand
+    # szHTML += "tnDataIndicator = %s<br />" % tmDataIndicator
     # ------------ отладка END
 
     iX1 = 0
@@ -86,13 +96,13 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
             u" FROM  tbIndexValue"
             u" WHERE tbIndexValue.szTICKER =  '%s' AND"
             u" tbIndexValue.tmDATE <= '%s';" % ( szTIKER, tmDataIndicator ) )
-        tmDataIndicator = dbcursor.fetchone()
+        tmDataIndicator = dbcursor.fetchone()[0]
 
         # ------------ отладка BEGIN
-        szHTML += "szCommand = %s<br />" % tmDataIndicator[0]
+        # szHTML += "szCommand = %s<br />" % tmDataIndicator
         # ------------ отладка END
         # ---- отладка BEGIN
-        szHTML += u"<h2>{%s} <small><i>%s</i></small></h2>" % (szTIKER, str( tmDataIndicator[0] ) )
+        # szHTML += u"<h2>{%s} <small><i>%s</i></small></h2>" % (szTIKER, str( tmDataIndicator ) )
         # ---- отладка END
         dbcursor.execute(
             u"SELECT tbIndexValue.fCLOSE" # (*01*) можно вывести для отладки еще и ---> ", tbIndexValue.tmDATE"
@@ -100,7 +110,7 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
             u" WHERE tbIndexValue.szTICKER =  '%s' AND"
             u" tbIndexValue.tmDATE <= '%s'"
             u" ORDER BY tbIndexValue.tmDATE DESC"
-            u" LIMIT 322;" % ( szTIKER, tmDataIndicator[0] ) )
+            u" LIMIT 322;" % ( szTIKER, tmDataIndicator ) )
         lstfDataAll = dbcursor.fetchall() # <--- Здесь результаты запроса. Цены закрытия в обратной хронологии
         lstfPercentAll = []               # <--- Здесь будет процент дневного роста/падения в %%
 
@@ -191,20 +201,20 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
         # ----------- проверка гипотезы БЕГИН
         lstfPercent4Indicator = lstfPercentAverage4Indicator
         # ----------- проверка гипотезы ЕНД
-        szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />" \
-                  u"--- Cр2.: <i>%s</i><br /" \
-                  u">-=- макс: %s<br />" \
-                  u"-=- мин.: %s</small></tt><br />" % (
-            lstfPercent4Indicator,
-            lstfPercentAverage4Indicator,
-            lstfPercentMax4Indicator,
-            lstfPercentMin4Indicator,
-            )
-        szHTML += u"<big>МАХ = %+03.5f // MIN = %+03.5f </big> ### %s<br />" % (
-            max( lstfPercentAll ),
-            min( lstfPercentAll ),
-            int( 1 + 2. * max ( [ abs( max(lstfPercentAll )), abs(min( lstfPercentAll )) ] ) ) * 0.5,
-            )
+        # szHTML += u"<tt><small>--- Ср.1: <b>%s</b><br />" \
+        #          u"--- Cр2.: <i>%s</i><br /" \
+        #          u">-=- макс: %s<br />" \
+        #          u"-=- мин.: %s</small></tt><br />" % (
+        #    lstfPercent4Indicator,
+        #    lstfPercentAverage4Indicator,
+        #    lstfPercentMax4Indicator,
+        #    lstfPercentMin4Indicator,
+        #    )
+        #szHTML += u"<big>МАХ = %+03.5f // MIN = %+03.5f </big> ### %s<br />" % (
+        #    max( lstfPercentAll ),
+        #    min( lstfPercentAll ),
+        #    int( 1 + 2. * max ( [ abs( max(lstfPercentAll )), abs(min( lstfPercentAll )) ] ) ) * 0.5,
+        #    )
         # ---- отладка END
 
         # del lstfDataAll               # <--- этот список довольно большой и ее можно удалить если это поможе скорости
@@ -339,7 +349,7 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
         # font = ImageFont.load_default()         # <--- загружаем шрифт
         drwIndicator.text( (iX1, 5), szTIKER, font = font  )
         drwIndicator.text( (iX1, 20),
-            tmDataIndicator[0].strftime( "%d-%b-%Y" ), font = font  )
+            tmDataIndicator.strftime( "%d-%b-%Y" ), font = font  )
 
         # рисуем шкалу справа
         iY1 = 37
@@ -372,12 +382,69 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
 
         del drwIndicator
 
-        szPathToFile += "%s_%s_test.png" % ( szTIKER, tmDataIndicator[0].strftime( "%Y-%m-%d" ) )
+        szPathToFile += "%s_%s_test.png" % ( szTIKER, tmDataIndicator.strftime( "%Y-%m-%d" ) )
         imgBox.save("." + szPathToFile, "PNG")
 
+
+        szData = szData.split("-")
+        szData = datetime.date(int(szData[0]), int(szData[1]), int(szData[2]))
+        # szData = tmDataIndicator.strftime( "%Y-%m-%d" )
+
         # отладка
+        szHTML += u"<div class='row-fluid' style='margin:1ex'" \
+                  u"  <div class='page-header'>" \
+                  u"   <h1>Мысли правым полушарием!<br /><small>" \
+                  u"      Лови тренд...</small></h2>"\
+                  u" </div>"
         # печатаем получившуюся картинку
-        szHTML += "<center><img src='%s' />" % szPathToFile
+        szHTML += u" <div class='span9'>" \
+                  u"  <center>" \
+                  u"   <a href='/indicator/%s/%s//'><i class='icon-chevron-left'></i><i class='icon-chevron-left'></i>" \
+                  u"<i class='icon-chevron-left'></i></a>&nbsp;&nbsp;" \
+                  u"<img class='img-polaroid' src='%s' style='vertical-align: baseline;' />&nbsp;&nbsp;" \
+                  u"<a href='/indicator/%s/%s//'><i class='icon-chevron-right'></i><i class='icon-chevron-right'></i>"\
+                  u"<i class='icon-chevron-right'></i></a></center>" \
+                  u" </div>" % (
+            szTIKER,
+            str( szData - datetime.timedelta(days=1) ),
+            szPathToFile,
+            szTIKER,
+            str( szData + datetime.timedelta(days=1) )
+            )
+
+        # szTICKER -- Название тикера
+        # szTICKERfullnameRU -- Полное наименование Тикера на русском
+        # szTICKERfullnameEN -- Полное наименование Тикера на английском
+        dbcursor.execute(
+            u"SELECT tbIndexName.szTICKER, tbIndexName.szTICKERfullnameRU, tbIndexName.szTICKERfullnameEN"
+            u" FROM  tbIndexName"
+            u" ORDER BY tbIndexName.szTICKER;" )
+        lstszTicker = dbcursor.fetchall()
+
+        szHTML += u" <div class='span4'>"
+        for iCurrentItem in lstszTicker :
+            if iCurrentItem[0] == szTIKER :
+                szHTML += u"<button class='btn btn-mini btn-inverse' type='button'>" \
+                          u"<abbr title='%s'>%s<abbr></button> " %  (
+                    unicode( iCurrentItem[1] ),
+                    iCurrentItem[0]
+                    )
+            else:
+                szHTML += u"<a href='/indicator/%s/%s//'>" \
+                          u"<button class='btn btn-mini btn-link' type='button'>" \
+                          u"<abbr title='%s'>%s</abbr></button></a> " %  (
+                    iCurrentItem[0],
+                    str( szData ),
+                    unicode ( iCurrentItem[1] ),
+                    iCurrentItem[0]
+                    )
+
+        szHTML += u"</div>"
+
+
+
+
+
 
 
         dbconnect.commit( )     # --- исполняем все накопленные для MySQL комманды разом
@@ -391,7 +458,13 @@ def indicator ( request, szTIKER = "", szData = "", szCommand="" ) :
 
     finally:
         # отладка
-        szHTML += u"<br />Время выполнения: %s" % \
+        # футтер
+        szHTML += u"</div><footer class='footer'>" \
+        u"<div class='container'>" \
+        u"<p class='muted credit'>(с) <a href='https://www.facebook.com/erjemin/info'" \
+        u" target='_blank'>Sergei Erjemin</a>, 2013.<br />" \
+        u"<small><small>Время выполнения: %s</small></small></p></div>" \
+        u"</footer></body></html>" % \
               str( datetime.datetime.now( timezone.get_default_timezone( ) ) - tmStart )
         # отладка
         return HttpResponse ( szHTML )
