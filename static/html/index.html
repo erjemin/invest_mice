@@ -1,0 +1,357 @@
+<!doctype html>
+<html>
+  
+  <head>
+    <title>index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/bootstrap-responsive.css">
+    <style>
+      .fitem {
+        margin-left: 2px;
+        font-size: 100px;
+        color: red; }
+    </style>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+      jQuery(document).ready(function($) {
+        $('#myCarousel').carousel({
+          interval: 5000
+        });
+        $('#carousel-text').html($('#slide-content-0').html());
+        //Handles the carousel thumbnails
+        $('[id^=carousel-selector-]').click(function() {
+          var id_selector = $(this).attr("id");
+          var id = id_selector.substr(id_selector.length - 1);
+          var id = parseInt(id);
+          $('#myCarousel').carousel(id);
+        });
+        // When the carousel slides, auto update the text
+        $('#myCarousel').on('slid', function(e) {
+          var id = $('.item.active').data('slide-number');
+          $('#carousel-text').html($('#slide-content-' + id).html());
+        });
+      });
+      $(document).ready(function(){
+        var HeaderTop = $('#header').offset().top;
+        $(window).scroll(function(){
+          if( $(window).scrollTop() > HeaderTop ) {
+            $('#header').css({position: 'fixed', top: '0px', width: '100%' });
+          } else {
+            $('#header').css({position: 'static'});
+          }
+        });
+      });
+    </script>
+
+
+  </head>
+  
+  <body>
+    <div class="navbar" id="header" width="100%">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Right Brain's Invest</a>
+          <ul class="nav pull-right">
+            <li>
+              <a href="#" class="active">Home</a> 
+            </li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-calendar">#</i></a>
+                <!-- Календарь -->
+                <div class="dropdown-menu" aria-labelledby="dLabel">
+                <table class="table-condensed table-bordered table-striped" role="menu" >
+                    <thead>
+                    <tr>
+                        <th><button class="btn-mini">‹‹</button></th>
+                        <th colspan="5">Mart 2013</th>
+                        <th>››</th>
+                    </tr>
+                    <tr>
+                        <th>Su</th>
+                        <th>Mo</th>
+                        <th>Tu</th>
+                        <th>We</th>
+                        <th>Th</th>
+                        <th>Fr</th>
+                        <th>Sa</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>29</td>
+                        <td>30</td>
+                        <td>31</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>6</td>
+                        <td>7</td>
+                        <td>8</td>
+                        <td>9</td>
+                        <td>10</td>
+                        <td>11</td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td>13</td>
+                        <td>14</td>
+                        <td>15</td>
+                        <td>16</td>
+                        <td>17</td>
+                        <td>18</td>
+                    </tr>
+                    <tr>
+                        <td>19</td>
+                        <td><a href="#" class="active"><strong>20</strong></a></td>
+                        <td>21</td>
+                        <td>22</td>
+                        <td>23</td>
+                        <td>24</td>
+                        <td>25</td>
+                    </tr>
+                    <tr>
+                        <td>26</td>
+                        <td>27</td>
+                        <td>28</td>
+                        <td>29</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>5</td>
+                        <td>6</td>
+                        <td>7</td>
+                        <td>8</td>
+                        <td>9</td>
+                        <td>10</td>
+                    </tr>
+                    </tbody>
+                </table>
+                </div>
+            </li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Гость</a>
+              <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                <li>
+                  <a href="#LoginModal" data-toggle="modal">Вход пользователя</a> 
+                </li>
+                <li>
+                  <a href="#">Регистрация</a> 
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- Main Area -->
+    <div id="main_area">
+      <!-- Slider -->
+      <div class="row-fluid">
+        <div class="span12" id="slider">
+          <!-- Top part of the slider -->
+          <div class="row-fluid">
+            <div class="span8" id="carousel-bounding-box">
+              <div id="myCarousel" class="carousel slide">
+                <!-- Carousel items -->
+                <div class="carousel-inner" align="center">
+                  <div class="item active" data-slide-number="0"><img src="../img/DJI_2013-03-22_test.png"></div>
+                  <div class="item" data-slide-number="1"><img src="../img/SPX_2013-03-22_test.png"></div>
+                  <div class="item" data-slide-number="2"><img src="../img/NIKKEI_2013-03-22_test.png"></div>
+                  <div class="item" data-slide-number="3"><img src="../img/FTSE_2013-03-22_test.png"></div>
+                  <div class="item" data-slide-number="4"><img src="../img/DAX_2013-03-22_test.png"></div>
+                  <div class="item" data-slide-number="5"><img src="../img/RTSI_2013-03-22_test.png"></div>
+                </div>
+                <!-- Carousel nav -->
+                <a class="carousel-control left" href="#myCarousel" data-slide="prev">‹</a>
+                <a class="carousel-control right" href="#myCarousel" data-slide="next">›</a>
+              </div>
+            </div>
+            <div  class="span4" id="carousel-text"></div>
+              <div style="display: none; background-color: #ff4500;">
+                <div id="slide-content-0">
+                  <h2>DJI</h2>
+                  <p>Lorem Ipsum Dolor</p>
+                  <p class="sub-text">October 24 2012 -
+                    <a href="#">Read more</a>
+                  </p>
+                </div>
+                <div id="slide-content-1">
+                  <h2>S&P 500</h2>
+                  <p>Lorem Ipsum Dolor</p>
+                  <p class="sub-text">October 24 2012 -
+                    <a href="#">Read more</a>
+                  </p>
+                </div>
+                <div id="slide-content-2">
+                  <h2>NIKKEY</h2>
+                  <p>Lorem Ipsum Dolor</p>
+                  <p class="sub-text">October 24 2012 -
+                    <a href="#">Read more</a>
+                  </p>
+                </div>
+                <div id="slide-content-3">
+                  <h2>FSE100</h2>
+                  <p>Lorem Ipsum Dolor</p>
+                  <p class="sub-text">October 24 2012 -
+                    <a href="#">Read more</a>
+                  </p>
+                </div>
+                <div id="slide-content-4">
+                  <h2>Slider Five</h2>
+                  <p>Lorem Ipsum Dolor</p>
+                  <p class="sub-text">October 24 2012 -
+                    <a href="#">Read more</a>
+                  </p>
+                </div>
+                <div id="slide-content-5">
+                <h2>Slider Six</h2>
+                <p>Lorem Ipsum Dolor</p>
+                <p class="sub-text">October 24 2012 -
+                  <a href="#">Read more</a>
+                  </p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--/Slider-->
+      <div class="row-fluid hidden-phone" id="slider-thumbs">
+        <div class="span12">
+          <!-- Bottom switcher of slider -->
+          <ul class="thumbnails">
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-0"><img src="../img/DJI_2013-03-22_test.png"></a>
+            </li>
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-1"><img src="../img/SPX_2013-03-22_test.png"></a>
+            </li>
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-2"><img src="../img/NIKKEI_2013-03-22_test.png"></a>
+            </li>
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-3"><img src="../img/FTSE_2013-03-22_test.png"></a>
+            </li>
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-4"><img src="../img/DAX_2013-03-22_test.png"></a>
+            </li>
+            <li class="span2">
+              <a class="thumbnail" id="carousel-selector-5"><img src="../img/RTSI_2013-03-22_test.png"></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="row-fluid hidden-phone">
+        <div class="span12">
+            <!-- Bottom switcher of slider -->
+            <ul class="thumbnails">
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/DJI_2013-03-21_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/SPX_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/NIKKEI_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/FTSE_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/DAX_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/RTSI_2013-03-22_test.png"></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row-fluid hidden-phone">
+        <div class="span12">
+            <!-- Bottom switcher of slider -->
+            <ul class="thumbnails">
+                <li class="span2">
+                    <a class="img-circle"><img src="../img/DJI_2013-03-19_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/SPX_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/NIKKEI_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/FTSE_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/DAX_2013-03-22_test.png"></a>
+                </li>
+                <li class="span2">
+                    <a class="thumbnail"><img src="../img/RTSI_2013-03-22_test.png"></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <ol class="breadcrumb fitem01 pull-left hidden-phone span8">
+        <li>
+            <a href="#">Home</a>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <a href="#">Library</a>
+            <span class="divider">/</span>
+        </li>
+        <li class="active">Data</li>
+    </ol>
+
+
+    <!-- Модальное окно: LOGIN -->
+    <div id="LoginModal" class="modal hide fade шт" tabindex="-1" role="dialog"
+    aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Вход для Пользователей</h3>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+          <div class="control-group">
+            <label class="control-label" for="inputEmail">e-mail</label>
+            <div class="controls">
+              <input type="text" id="inputEmail" placeholder="Email"> 
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="inputPassword">password</label>
+            <div class="controls">
+              <input type="password" id="inputPassword" placeholder="Password"> 
+            </div>
+          </div>
+          <div class="control-group">
+            <div class="controls">
+              <label class="checkbox">
+                <input type="checkbox"> Запомнить меня</label>
+              <button type="submit" class="btn btn-primary">Вход</button>
+              <button class="btn" data-dismiss="modal" aria-hidden="true"
+              style="">Ой...</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">Я все забл:
+        <a href="#2">Восcтановить</a> .
+        <br> Я новенький:
+        <a href="#1">Пройти первичную регистрацию</a> .</div>
+    </div>
+  </body>
+
+</html>
