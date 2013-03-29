@@ -12,9 +12,6 @@
         margin-left: 2px;
         font-size: 100px;
         color: red; }
-      #main_area {
-        padding-top: 60px;
-      }
     </style>
     <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -37,32 +34,42 @@
           $('#carousel-text').html($('#slide-content-' + id).html());
         });
       });
+      $(document).ready(function(){
+        var HeaderTop = $('#header').offset().top;
+        $(window).scroll(function(){
+          if( $(window).scrollTop() > HeaderTop ) {
+            $('#header').css({position: 'fixed', top: '0px', width: '100%' });
+          } else {
+            $('#header').css({position: 'static'});
+          }
+        });
+      });
     </script>
 
 
   </head>
   
   <body>
-    <div class="navbar navbar-fixed-top">
+    <div class="navbar" id="header" width="100%">
       <div class="navbar-inner">
         <div class="container">
-          <a class="brand" href="#">Right Brain Invest</a>
+          <a class="brand" href="#">Right Brain's Invest</a>
           <ul class="nav pull-right">
+            <li>
+              <a href="#" class="active">Home</a> 
+            </li>
             <li class="dropdown">
-              <a class="dropdown-toggle active" data-toggle="dropdown" href="#"><i class="icon-calendar">#</i></a>
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-calendar">#</i></a>
                 <!-- Календарь -->
                 <div class="dropdown-menu" aria-labelledby="dLabel">
-                  <table class="table-condensed table-bordered table-striped" role="menu" >
+                <table class="table-condensed table-bordered table-striped" role="menu" >
                     <thead>
-                      <tr>
-                        <th colspan="7"><small>today:</small> 20 Mar 2013</th>
-                      </tr>
-                      <tr>
+                    <tr>
                         <th><button class="btn-mini">‹‹</button></th>
                         <th colspan="5">Mart 2013</th>
                         <th>››</th>
-                      </tr>
-                      <tr>
+                    </tr>
+                    <tr>
                         <th>Su</th>
                         <th>Mo</th>
                         <th>Tu</th>
@@ -70,66 +77,75 @@
                         <th>Th</th>
                         <th>Fr</th>
                         <th>Sa</th>
-                      </tr>
+                    </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td><small><a href="#" class="active">26</a></small></td>
-                        <td><small><a href="#" class="active">27</a></small></td>
-                        <td><small><a href="#" class="active">28</a></small></td>
-                        <td><a href="#" class="active">1</a></td>
-                        <td><a href="#" class="active">2</a></td>
-                        <td><a href="#" class="active">3</a></td>
-                        <td><a href="#" class="active">4</a></td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="active">5</a></td>
-                        <td><a href="#" class="active">6</a></td>
-                        <td><a href="#" class="active">7</a></td>
-                        <td><a href="#" class="active">8</a></td>
-                        <td><a href="#" class="active">9</a></td>
-                        <td><a href="#" class="active">10</a></td>
-                        <td><a href="#" class="active">11</a></td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="active">12</a></td>
-                        <td><a href="#" class="active">13</a></td>
-                        <td><a href="#" class="active">14</a></td>
-                        <td><a href="#" class="active">15</a></td>
-                        <td><a href="#" class="active">16</a></td>
-                        <td><a href="#" class="active">17</a></td>
-                        <td><a href="#" class="active">18</a></td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="active">19</a></td>
+                    <tr>
+                        <td>29</td>
+                        <td>30</td>
+                        <td>31</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>6</td>
+                        <td>7</td>
+                        <td>8</td>
+                        <td>9</td>
+                        <td>10</td>
+                        <td>11</td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td>13</td>
+                        <td>14</td>
+                        <td>15</td>
+                        <td>16</td>
+                        <td>17</td>
+                        <td>18</td>
+                    </tr>
+                    <tr>
+                        <td>19</td>
                         <td><a href="#" class="active"><strong>20</strong></a></td>
                         <td>21</td>
                         <td>22</td>
                         <td>23</td>
                         <td>24</td>
                         <td>25</td>
-                      </tr>
-                      <tr>
+                    </tr>
+                    <tr>
                         <td>26</td>
                         <td>27</td>
                         <td>28</td>
                         <td>29</td>
-                        <td>30</td>
-                        <td>31</td>
-                        <td><small>1</small></td>
-                      </tr>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>5</td>
+                        <td>6</td>
+                        <td>7</td>
+                        <td>8</td>
+                        <td>9</td>
+                        <td>10</td>
+                    </tr>
                     </tbody>
-                  </table>
+                </table>
                 </div>
             </li>
             <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Guest</a>
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Гость</a>
               <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
                 <li>
-                  <a href="#LoginModal" data-toggle="modal">Sign in</a>
+                  <a href="#LoginModal" data-toggle="modal">Вход пользователя</a> 
                 </li>
                 <li>
-                  <a href="#">Registration</a>
+                  <a href="#">Регистрация</a> 
                 </li>
               </ul>
             </li>
@@ -137,12 +153,10 @@
         </div>
       </div>
     </div>
-
-
     <!-- Main Area -->
-    <div class="row-fluid" id="main_area">
+    <div id="main_area">
       <!-- Slider -->
-      <div class="container row-fluid">
+      <div class="row-fluid">
         <div class="span12" id="slider">
           <!-- Top part of the slider -->
           <div class="row-fluid">
@@ -200,9 +214,9 @@
                   </p>
                 </div>
                 <div id="slide-content-5">
-                <h2>RTS Index</h2>
-                <p class="sub-text">October 24 2012 - Facts occur in the past. All of the math that they are going to apply is about the past. Investing unfolds in the future. Investing is trying to understand a huge vast sea of information and understanding what is important to me right now. The right brain is good at knowing what you need to do now, what piece of information is important to you now.</p>
-                  <p>Facts occur in the past. All of the math that they are going to apply is about the past. Investing unfolds in the future. Investing is trying to understand a huge vast sea of information and understanding what is important to me right now. The right brain is good at knowing what you need to do now, what piece of information is important to you now.</p>
+                <h2>Slider Six</h2>
+                <p>Lorem Ipsum Dolor</p>
+                <p class="sub-text">October 24 2012 -
                   <a href="#">Read more</a>
                   </p>
                 </div>
@@ -288,30 +302,19 @@
         </div>
     </div>
 
+    
 
-
-    <!-- footer -->
-    <div class="navbar-fixed-bottom">
-      <div class="navbar-inner">
-          <div class="container row-fluid">
-              <ol class="breadcrumb pull-left span8">
-                  <li>
-                      <a href="#">Home</a>
-                      <span class="divider">/</span>
-                  </li>
-                  <li>
-                      <a href="#">Library</a>
-                      <span class="divider">/</span>
-                  </li>
-                  <li class="active">
-                      Data
-                  </li>
-              </ol>
-              <div class="breadcrumb span4 hidden-phone"><p class="pull-right">(c) Sergei Erjemin, 2013</p></div>
-          </div>
-      </div>
-    </div>
-
+    <ol class="breadcrumb fitem01 pull-left hidden-phone span8">
+        <li>
+            <a href="#">Home</a>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <a href="#">Library</a>
+            <span class="divider">/</span>
+        </li>
+        <li class="active">Data</li>
+    </ol>
 
 
     <!-- Модальное окно: LOGIN -->
@@ -319,7 +322,7 @@
     aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-        <h3 id="myModalLabel">User login</h3>
+        <h3 id="myModalLabel">Вход для Пользователей</h3>
       </div>
       <div class="modal-body">
         <form class="form-horizontal">
@@ -338,15 +341,15 @@
           <div class="control-group">
             <div class="controls">
               <label class="checkbox">
-                <input type="checkbox"> Remember me</label>
-              <button type="submit" class="btn btn-primary">LogIn</button>
+                <input type="checkbox"> Запомнить меня</label>
+              <button type="submit" class="btn btn-primary">Вход</button>
               <button class="btn" data-dismiss="modal" aria-hidden="true"
-              style="">Ups...</button>
+              style="">Ой...</button>
             </div>
           </div>
         </form>
       </div>
-      <div class="modal-footer">Я все забыл:
+      <div class="modal-footer">Я все забл:
         <a href="#2">Восcтановить</a> .
         <br> Я новенький:
         <a href="#1">Пройти первичную регистрацию</a> .</div>
